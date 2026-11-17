@@ -364,6 +364,8 @@
   table.schedule input { width: 100%; border: 1px solid transparent; background: transparent; font: inherit; font-size: 0.82rem; color: var(--ink); padding: 4px 6px; border-radius: 5px; }
   table.schedule input:hover, table.schedule input:focus { border-color: var(--line); background: var(--surface-2); }
   table.schedule tr.weekend td { color: var(--ink-faint); font-style: italic; }
+  table.schedule select { font: inherit; font-size: 0.8rem; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); max-width: 120px; display: block; margin: 2px 0; }
+  table.schedule td input[type="text"] { border-color: var(--line); background: var(--surface-2); min-width: 90px; }
   .settings-note { font-size: 0.78rem; color: var(--ink-faint); margin: 0 0 12px; }
 
   /* planning: plantilla Excel / importar / planning.json compartido */
@@ -387,6 +389,14 @@
   .me-bar b { color: var(--ink); }
   .me-bar .me-role { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--hema-soft); color: var(--hema-strong); }
   .me-bar .me-role.free { background: var(--surface-2); color: var(--ink-faint); border: 1px solid var(--line); }
+  .me-bar { position: relative; }
+  .me-user { display: inline-flex; align-items: center; gap: 8px; }
+  .me-bar button.me-animal { font-size: 1.5rem; line-height: 1; width: 40px; height: 40px; border-radius: 50%; background: var(--surface); border: 2px solid var(--hema-soft); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .me-bar button.me-animal:hover { border-color: var(--hema); }
+  .animal-picker { position: absolute; top: 46px; left: 0; z-index: 40; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 10px; width: 300px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .animal-picker .ap-title { width: 100%; font-size: 0.78rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 4px; }
+  .me-bar .animal-picker button.ap-opt { font-size: 1.35rem; width: 38px; height: 38px; border-radius: 8px; border: 1px solid transparent; background: var(--surface-2); text-decoration: none; cursor: pointer; padding: 0; }
+  .me-bar .animal-picker button.ap-opt.sel { border-color: var(--hema); background: var(--hema-soft); }
   .me-bar .me-hint { flex-basis: 100%; font-size: 0.8rem; color: var(--eosin); }
   .me-bar button { font: inherit; font-size: 0.78rem; background: none; border: none; color: var(--hema); cursor: pointer; text-decoration: underline; padding: 0; }
   .me-modal { position: fixed; inset: 0; background: rgba(36,30,46,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
@@ -421,6 +431,15 @@
   .cli-note span { display: block; font-size: 0.68rem; color: var(--ink-faint); }
   .cli-add { display: flex; gap: 5px; margin-top: 4px; }
   .cli-add input { flex: 1; min-width: 0; font: inherit; font-size: 0.74rem; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  table.org-grid tr.org-tarde-start td { border-top: 2px solid var(--hema); }
+  table.pref-grid { min-width: 0; }
+  table.pref-grid td, table.pref-grid th { padding: 5px 6px; font-size: 0.8rem; }
+  table.pref-grid input { width: 16px; height: 16px; accent-color: var(--hema); }
+  table.pref-grid tr.pref-me td { background: var(--hema-soft); }
+  .pref-name { white-space: nowrap; }
+  input.ref-input { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.78rem; width: 108px; padding: 2px 5px; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); margin-right: 4px; }
+  input.ref-input.ref-bad, #add-ref.ref-bad { border-color: var(--crit); background: var(--crit-soft); }
+  .ref-tag { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.74rem; color: var(--ink-soft); }
   .resident-col.mine { border: 2px solid var(--hema); }
   .resident-col.mine .resident-col-head { background: var(--hema-soft); }
   .mine-tag { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; padding: 1px 6px; border-radius: 5px; background: var(--hema); color: #fff; }
@@ -476,6 +495,7 @@
     <button class="tab tab-big" data-panel="dedia">DÍA<small>piezas previstas</small></button>
     <button class="tab tab-big active" data-panel="reparto">POST<small>reparto del día</small></button>
     <button class="tab" data-panel="pendientes">Piezas por incluir</button>
+    <button class="tab" data-panel="planning">Planning</button>
     <button class="tab" data-panel="org">Organización de inclusión</button>
   </div>
 
@@ -593,6 +613,11 @@
           </div>
           <div id="dd-status" class="planning-status"></div>
         </div>
+        <div class="card" id="dd-late-card" style="display:none;">
+          <h3>Sin llegar de días anteriores</h3>
+          <div class="card-sub">Piezas apuntadas en DÍA otros días que nadie ha marcado como llegadas. Si sigue pendiente que lleguen, «Pasar a mi lista» la añade a tus previstas de hoy para que la vea POST de mañana. Si no va a llegar (cirugía suspendida…), «No llegará».</div>
+          <ul class="pending-list" id="dd-late-list"></ul>
+        </div>
       </div>
     </div>
   </section>
@@ -601,37 +626,7 @@
   <section id="panel-reparto" class="panel active">
 
     <details class="settings" id="settings-details">
-      <summary>Ajustes: rotaciones fijas y planning por mes</summary>
-      <div class="planning-io">
-        <h4>Planning de un mes nuevo</h4>
-        <ol>
-          <li><b>Importa el planning</b> del mes, en PDF o en Excel, tal cual lo haces (fila «Mes», y columnas DÍA · POST · TARDE 2 · N. ADULTO · N. FETAL · Out; las tablas de recuento de la derecha se ignoran). Vale con nombres o iniciales. Si ese mes ya existía, se sustituye por el nuevo. Si no tienes el Excel a mano, descarga la <b>plantilla</b> (mismo formato) y rellénala.</li>
-          <li>Revisa en Ajustes las <b>rotaciones</b> del mes (el planning no las trae: se copian del mes anterior, o de la hoja «Rotaciones» de la plantilla) y los avisos que salgan.</li>
-          <li>Descarga <b>planning.json</b> y súbelo a GitHub, en la misma carpeta que el HTML, reemplazando el anterior. Así todo el mundo ve el planning nuevo al abrir la página (sin tocar el HTML). Incluye también los cambios que hayas hecho a mano aquí abajo.</li>
-        </ol>
-        <div class="planning-io-row">
-          <label class="btn btn-primary btn-sm" for="planning-file">1 · Importar planning (PDF o Excel)</label>
-          <input type="file" id="planning-file" accept=".pdf,.xlsx,.xlsm,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>
-          <button class="btn btn-ghost btn-sm" id="planning-json-btn">3 · Descargar planning.json</button>
-        </div>
-        <div class="planning-io-row">
-          <select id="tpl-month" aria-label="Mes de la plantilla"></select>
-          <select id="tpl-year" aria-label="Año de la plantilla"></select>
-          <button class="btn btn-ghost btn-sm" id="tpl-download-btn">Descargar plantilla Excel (opcional)</button>
-        </div>
-        <div id="planning-status" class="planning-status"></div>
-        <p class="planning-source" id="planning-source"></p>
-      </div>
-      <div class="owner-grid" style="max-width:220px;">
-        <div class="field">
-          <label for="settings-month-select">Mes</label>
-          <select id="settings-month-select"></select>
-        </div>
-      </div>
-      <p class="settings-note">Las rotaciones son las que cambian mes a mes: elige aquí quién está en cada especialidad durante el mes seleccionado arriba (la mayoría se quedan en "—", sin residente fijo, y esas piezas van directas al reparto). Sus piezas se asignan automáticamente salvo que ese residente no esté disponible ese día. Puede haber varias personas en la misma rotación (usa el desplegable vacío de debajo para añadir otra): incluye la más pequeña, y si alguien mayor de esa rotación está ese día de POST o Tarde 2, incluye la mitad. Si alguien solo está parte del mes (cambio de rotación a mitad de mes), pon los días, p. ej. «16-30». Marca «repite» si ya había rotado antes en esa especialidad: entonces solo incluye esas piezas los días que está de POST o Tarde 2, por la tarde y las primeras de su lista (mitad y mitad con quien rota por primera vez); los demás días van al reparto general. HEM (protocolo linfoma) y NR (neuro) no aparecen aquí porque siempre van a POST por la mañana. Los meses de noviembre 2026 a mayo 2027 traen ya las rotaciones del cuadro de rotaciones.</p>
-      <div class="owner-grid" id="owner-grid"></div>
-      <p class="settings-note" id="necro-rotation-note">NECRO es una rotación más, como las de arriba: quien la lleve ayuda con "el resto" hasta 4h al día, salvo que ese día tenga él mismo la autopsia (entonces 0h). Rota cada mes:</p>
-      <div class="owner-grid" id="necro-rotation-field" style="max-width:220px;"></div>
+      <summary>Ajustes: retrasos y correos</summary>
       <p class="settings-note">Piezas retrasadas: a partir de cuántos días de espera se marcan con aviso (⚠ pieza normal, ‼ si además es neoplásica) y pasan a tratarse como urgentes:</p>
       <div class="owner-grid" style="max-width:220px;">
         <div class="field">
@@ -643,14 +638,7 @@
       <div class="field" style="max-width:640px;">
         <textarea id="emails-input" rows="2" placeholder="nombre@hospital.es, otro@hospital.es…" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font:inherit; font-size:0.84rem;"></textarea>
       </div>
-      <p class="settings-note" id="schedule-month-note">Planning del mes seleccionado — todo editable aquí o directamente en la tarjeta "Día a repartir", por desplegable (Out/Día admiten varias personas).</p>
-      <div class="schedule-table-wrap">
-        <table class="schedule">
-          <thead><tr><th>Día</th><th>POST</th><th>Tarde 2</th><th>Out</th><th>Día (recepción)</th></tr></thead>
-          <tbody id="schedule-tbody"></tbody>
-        </table>
-      </div>
-      <button class="btn btn-ghost btn-sm" id="restore-schedule-btn">Restaurar planning original de este mes</button>
+      <p class="settings-note">El planning (guardias, autopsias, festivos y rotaciones) se edita en la pestaña «Planning».</p>
     </details>
 
     <div class="grid-2">
@@ -692,6 +680,11 @@
           <div id="prev-fs" class="planning-status"></div>
           <ul class="pending-list" id="prev-list"></ul>
           <p class="empty-hint" id="prev-empty"></p>
+          <details class="notes" id="prev-late" style="display:none; margin:0 0 12px;">
+            <summary id="prev-late-sum">Previstas de días anteriores sin llegar</summary>
+            <p class="settings-note" style="margin:0 0 8px;">Por si alguna llega hoy con retraso: márcala y entra en el reparto como pieza nueva.</p>
+            <ul class="pending-list" id="prev-late-list"></ul>
+          </details>
           <button class="btn btn-primary btn-block" id="prev-add-btn">Añadir las recibidas al reparto</button>
           <p class="settings-note" style="margin:8px 0 0;">Marca las que han llegado (y corrige la cirugía si cambió). Las que no lleguen no se añaden; las que lleguen sin estar previstas, añádelas abajo como siempre.</p>
         </div>
@@ -730,6 +723,10 @@
             <label for="add-neoplasica">Pieza neoplásica</label>
           </div>
           <div class="field">
+            <label for="add-ref">Nº de biopsia</label>
+            <input type="text" id="add-ref" placeholder="B00-000000" maxlength="11" autocomplete="off" style="font-family:'IBM Plex Mono',monospace;">
+          </div>
+          <div class="field">
             <label for="add-nota">Nota (opcional)</label>
             <input type="text" id="add-nota" placeholder="p. ej. revisar con adjunto…">
           </div>
@@ -763,7 +760,7 @@
         </div>
         <div id="arrastre-box" class="card" style="display:none; margin-bottom:16px;">
           <h3>Pendientes de días anteriores</h3>
-          <div class="card-sub">Piezas que su residente no llegó a incluir. Siguen siendo suyas y no cuentan en las horas del reparto de hoy. Márcalas cuando estén incluidas.</div>
+          <div class="card-sub">Piezas que su residente no llegó a incluir. Siguen siendo suyas y no cuentan en las horas del reparto de hoy, salvo las que salen hoy de descalcificación (se tallan hoy: cuentan en su mañana y en su campana). Márcalas cuando estén incluidas.</div>
           <div id="arrastre-list"></div>
         </div>
         <div id="results-empty" class="card">
@@ -788,6 +785,56 @@
       </div>
 
     </div>
+  </section>
+
+  <!-- PLANNING -->
+  <section id="panel-planning" class="panel">
+    <div class="pp-head">
+      <h2 style="font-size:1.1rem; color:var(--ink-soft);">Planning<span id="plan-title" class="pp-date"></span></h2>
+      <p class="settings-note" style="margin:4px 0 0;">Para cambios puntuales (un cambio de guardia, una autopsia, un festivo, una rotación) edítalo aquí directamente: se guarda en la carpeta compartida y lo ven todos en un minuto. Cada día cambiado indica quién lo cambió y cuándo.</p>
+    </div>
+    <div id="plan-share" class="planning-status" style="margin-top:12px;"></div>
+      <div class="owner-grid" style="max-width:220px;">
+        <div class="field">
+          <label for="settings-month-select">Mes</label>
+          <select id="settings-month-select"></select>
+        </div>
+      </div>
+    <h3 style="font-size:1.05rem; margin:6px 0 8px;">Guardias del mes</h3>
+    <div class="schedule-table-wrap">
+      <table class="schedule">
+        <thead><tr><th>Fecha</th><th>DÍA</th><th>POST</th><th>Tarde 2</th><th>Autopsia</th><th>Out</th><th>Festivo</th></tr></thead>
+        <tbody id="schedule-tbody"></tbody>
+      </table>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="restore-schedule-btn">Restaurar el planning importado de este mes</button>
+    <h3 style="font-size:1.05rem; margin:22px 0 8px;">Rotaciones del mes</h3>
+      <p class="settings-note">Las rotaciones son las que cambian mes a mes: elige aquí quién está en cada especialidad durante el mes seleccionado arriba (la mayoría se quedan en "—", sin residente fijo, y esas piezas van directas al reparto). Sus piezas se asignan automáticamente salvo que ese residente no esté disponible ese día. Puede haber varias personas en la misma rotación (usa el desplegable vacío de debajo para añadir otra): incluye la más pequeña, y si alguien mayor de esa rotación está ese día de POST o Tarde 2, incluye la mitad. Si alguien solo está parte del mes (cambio de rotación a mitad de mes), pon los días, p. ej. «16-30». Marca «repite» si ya había rotado antes en esa especialidad: entonces solo incluye esas piezas los días que está de POST o Tarde 2, por la tarde y las primeras de su lista (mitad y mitad con quien rota por primera vez); los demás días van al reparto general. HEM (protocolo linfoma) y NR (neuro) no aparecen aquí porque siempre van a POST por la mañana. Los meses de noviembre 2026 a mayo 2027 traen ya las rotaciones del cuadro de rotaciones.</p>
+      <div class="owner-grid" id="owner-grid"></div>
+      <p class="settings-note" id="necro-rotation-note">NECRO es una rotación más, como las de arriba: quien la lleve ayuda con "el resto" hasta 4h al día, salvo que ese día tenga él mismo la autopsia (entonces 0h). Rota cada mes:</p>
+      <div class="owner-grid" id="necro-rotation-field" style="max-width:220px;"></div>
+    <details class="settings" style="margin-top:22px;">
+      <summary>Importar el planning de un mes nuevo (PDF o Excel)</summary>
+      <div class="planning-io">
+        <ol>
+          <li><b>Importa el planning</b> del mes, en PDF o en Excel, tal cual lo haces (fila «Mes», y columnas DÍA · POST · TARDE 2 · N. ADULTO · N. FETAL · Out; las tablas de recuento de la derecha se ignoran). Vale con nombres o iniciales. Si ese mes ya existía, se sustituye por el nuevo. Si no tienes el Excel a mano, descarga la <b>plantilla</b> (mismo formato) y rellénala.</li>
+          <li>Revisa arriba las <b>guardias</b> y las <b>rotaciones</b> del mes (el planning no trae las rotaciones: se copian del mes anterior, o de la hoja «Rotaciones» de la plantilla) y los avisos que salgan.</li>
+          <li>Ya está: con la carpeta compartida conectada, el mes se guarda en ella y lo ven todos. No hace falta subir nada a GitHub.</li>
+        </ol>
+        <div class="planning-io-row">
+          <label class="btn btn-primary btn-sm" for="planning-file">1 · Importar planning (PDF o Excel)</label>
+          <input type="file" id="planning-file" accept=".pdf,.xlsx,.xlsm,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>
+          <button class="btn btn-ghost btn-sm" id="planning-json-btn" title="Copia de seguridad del planning; también sirve para publicarlo en GitHub si algún día no hay carpeta compartida">Descargar copia (planning.json)</button>
+        </div>
+        <div class="planning-io-row">
+          <select id="tpl-month" aria-label="Mes de la plantilla"></select>
+          <select id="tpl-year" aria-label="Año de la plantilla"></select>
+          <button class="btn btn-ghost btn-sm" id="tpl-download-btn">Descargar plantilla Excel (opcional)</button>
+        </div>
+        <div id="planning-status" class="planning-status"></div>
+        <p class="planning-source" id="planning-source"></p>
+      </div>
+    </details>
   </section>
 
   <!-- PIEZAS POR INCLUIR -->
@@ -818,13 +865,29 @@
       <div>
         <div class="card">
           <h3>Reservar campana</h3>
-          <div class="card-sub">Inclusión de la mañana (8–16h): reserva una campana para incluir lo asignado o lo que no entra en el reparto (reinclusiones, encéfalos, necros…).</div>
+          <div class="card-sub">Campanas de 9 a 20h (mañana 9–16h, tarde 16–20h): reserva una campana para incluir lo asignado o lo que no entra en el reparto (reinclusiones, encéfalos, necros…).</div>
           <div class="field">
             <label for="org-date">Día</label>
             <input type="date" id="org-date">
           </div>
           <div id="org-conn" class="planning-status"></div>
           <div id="org-assigned"></div>
+        </div>
+        <div class="card">
+          <h3>Reserva automática</h3>
+          <div class="card-sub">Por la mañana reserva a cada residente el tiempo de sus piezas de ese día (sin las ya incluidas), en un solo bloque si cabe y en sus franjas preferidas; si no cabe seguido, lo divide en bloques, sin cambiar de campana a media inclusión. Por la tarde (16–20h), la Campana 1 para POST y la Campana 2 para Tarde 2. Respeta las reservas hechas a mano; si lo vuelves a pulsar, rehace solo las automáticas.</div>
+          <button class="btn btn-primary btn-block" id="org-auto-btn">Reservar campanas según el reparto</button>
+          <div id="org-auto-status" class="planning-status" style="margin-top:10px;"></div>
+        </div>
+        <div class="card">
+          <h3>Preferencias de horario</h3>
+          <div class="card-sub">Franjas de la mañana en las que cada uno prefiere incluir (sin marcar = sin preferencia: lo más temprano posible). Por la tarde no hace falta: la Campana 1 es de POST y la 2 de Tarde 2. Se comparte con todos.</div>
+          <div class="table-scroll" style="box-shadow:none;">
+            <table class="pref-grid">
+              <thead><tr><th>Residente</th><th>9–11</th><th>11–13</th><th>13–16</th></tr></thead>
+              <tbody id="pref-tbody"></tbody>
+            </table>
+          </div>
         </div>
         <div class="card" id="org-form-card" style="display:none;">
           <h3 id="org-form-title">Nueva reserva</h3>
@@ -884,7 +947,7 @@
             <li>En la hoja: <b>Extensiones → Apps Script</b>. Borra lo que haya y pega el código del script (botón de abajo para descargarlo).</li>
             <li>Pulsa <b>Implementar → Nueva implementación</b>, tipo <b>Aplicación web</b>. «Ejecutar como»: <b>Yo</b>. «Quién tiene acceso»: <b>Cualquier usuario</b>. Pulsa Implementar y autoriza el acceso.</li>
             <li>Copia la <b>URL de la aplicación web</b> (acaba en <code>/exec</code>) y pégala aquí abajo.</li>
-            <li>Descarga de nuevo <b>planning.json</b> (en Ajustes del reparto) y súbelo a GitHub: así la conexión llega a todos los ordenadores.</li>
+            <li>Descarga una copia del planning (pestaña Planning → «Descargar copia (planning.json)») y súbela a GitHub junto al HTML: así la conexión llega a todos los ordenadores.</li>
           </ol>
           <div class="field">
             <label for="org-url">URL de la aplicación web</label>
@@ -899,7 +962,7 @@
     </div>
   </section>
 
-  <footer>Tiempos de la tabla de reparto por tiempos (diciembre 2025 – noviembre 2026, n = 2.640; 1 punto = 10 min; tiempo de residente formado). Las especialidades con residente de rotación asignado ese mes (ver Ajustes) van directas a su residente; el resto se reparte entre quien lleve la rotación de NECRO ese mes (hasta 4h, 0 si tiene necropsia o está de día), y las personas de POST y Tarde 2, equilibrando por tiempo estimado y aprovechando al máximo las 2h de quien está protegido. POST no hace necropsia y, si excepcionalmente la hace, mantiene su inclusión de POST. Quien tenga necropsia o esté de día ve su inclusión recortada a ~2h (salvo que sea la persona de POST o de Tarde 2). Protocolo linfoma, piezas de neuro y piezas retrasadas (ver Ajustes) son siempre urgentes y se asignan directamente a POST. Las piezas técnicas (sin especialidad) se reparten solo entre POST y Tarde 2, y Tarde 2 asume ~1h más que POST por la tarde. Cualquier pieza se puede asignar a mano a cualquier residente. Dos estaciones de inclusión: 8–16h (con margen para comida y sesión) y 16–20h por la tarde.</footer>
+  <footer>Tiempos de la tabla de reparto por tiempos (diciembre 2025 – noviembre 2026, n = 2.640; 1 punto = 10 min; tiempo de residente formado). Las especialidades con residente de rotación asignado ese mes (ver Ajustes) van directas a su residente; el resto se reparte entre quien lleve la rotación de NECRO ese mes (hasta 4h, 0 si tiene necropsia o está de día), y las personas de POST y Tarde 2, equilibrando por tiempo estimado y aprovechando al máximo las 2h de quien está protegido. POST no hace necropsia y, si excepcionalmente la hace, mantiene su inclusión de POST. Quien tenga necropsia o esté de día ve su inclusión recortada a ~2h (salvo que sea la persona de POST o de Tarde 2). Protocolo linfoma, piezas de neuro y piezas retrasadas (ver Ajustes) son siempre urgentes y se asignan directamente a POST. Las piezas técnicas (sin especialidad) se reparten solo entre POST y Tarde 2, y Tarde 2 asume ~1h más que POST por la tarde. Cualquier pieza se puede asignar a mano a cualquier residente. Dos estaciones de inclusión: 9–16h (con margen para la comida) y 16–20h por la tarde.</footer>
 </div>
 
 <script>
@@ -1039,6 +1102,14 @@
     return String(str).split(/[,/]/).map(function (s) { return s.trim(); }).filter(Boolean);
   }
   function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  // Nº de biopsia con formato B00-000000 (acepta «b26 1234», «B26-001234», «26001234»…). "" si está vacío, null si no vale.
+  function normRef(v) {
+    var t = String(v || "").toUpperCase().replace(/\s+/g, "");
+    if (!t) return "";
+    var m = t.match(/^B?(\d{2})-?(\d{1,6})$/);
+    if (!m) return null;
+    return "B" + m[1] + "-" + ("000000" + m[2]).slice(-6);
+  }
   // Aviso de retraso, bien visible: banner naranja "! RETRASO Xd" si lleva más días de espera que
   // el umbral configurado, o rojo "‼ NEOPLÁSICA RETRASADA Xd" si además es neoplásica. Una pieza
   // retrasada se trata como urgente aunque nadie marcase la casilla "Urgente".
@@ -1167,10 +1238,10 @@
   // TARDE 2 recibe el bloque nada más entrar (16h) y hace toda la tarde; POST lo recibe ya avanzada
   // la tarde y tiene menos margen real — así que Tarde 2 asume ~1h más de "el resto" que POST.
   var TARDE_POST_GAP = 60;
-  // Tiempo real de inclusión: por la mañana se descuentan comida (30min) y sesión (1h); por la
+  // Tiempo real de inclusión: por la mañana, de 9 a 16h menos la comida (30min); por la
   // tarde la ventana de inclusión es 16–20h (la última hora, merienda incluida, no se cuenta).
-  var MORNING_WINDOW_MIN = 8 * 60;
-  var MORNING_BREAK_MIN = 90;
+  var MORNING_WINDOW_MIN = 7 * 60;  // 9–16h
+  var MORNING_BREAK_MIN = 30;       // comida
   var MORNING_STATION_MIN = MORNING_WINDOW_MIN - MORNING_BREAK_MIN; // 6h30 reales por estación
   var TARDE_STATION_MIN = 4 * 60; // 16–20h
   var DEFAULT_RETRASO_UMBRAL = 1; // días de espera a partir de los cuales una pieza se marca retrasada
@@ -1527,6 +1598,7 @@
         list = list.filter(function (e) { return e && e.name; });
         if (list.length) owners[esp] = list.map(formatOwnerEntry).join(", "); else delete owners[esp];
         persist();
+        planTouchOwners(state.selectedMonth);
         renderOwnerGrid();
         renderDayStrip();
         renderResults();
@@ -1625,6 +1697,7 @@
     wrap.appendChild(buildSingleSelect(state.necroRotationByMonth[state.selectedMonth], function (v) {
       state.necroRotationByMonth[state.selectedMonth] = v;
       persist();
+      planTouchOwners(state.selectedMonth);
       renderDayStrip();
       renderResults();
     }));
@@ -1648,28 +1721,61 @@
   function renderScheduleTable() {
     var tbody = document.getElementById("schedule-tbody");
     tbody.innerHTML = "";
-    state.scheduleByMonth[state.selectedMonth].forEach(function (d) {
+    var mk = state.selectedMonth;
+    var pm = (state.planMod && state.planMod[mk]) || { days: {} };
+    state.scheduleByMonth[mk].forEach(function (d) {
       var tr = document.createElement("tr");
-      if (d.weekend) tr.className = "weekend";
-      var label = d.weekday + " " + d.day + (d.holiday ? " (" + d.holiday + ")" : "");
+      if (d.weekend || d.holiday) tr.className = "weekend";
       var tdLabel = document.createElement("td");
-      tdLabel.textContent = label;
+      var md = pm.days && pm.days[d.day];
+      tdLabel.innerHTML = '<b style="font-style:normal; color:var(--ink);">' + xmlEscape(d.weekday + " " + d.day) + '</b>' +
+        (md && md.t ? '<div style="font-size:0.66rem; color:var(--ink-faint); font-style:normal;">cambiado por ' + xmlEscape(md.by || "sin nombre") + ' · ' + fmtWhen(md.t) + '</div>' : '');
       tr.appendChild(tdLabel);
-
       function cell(builder) {
         var td = document.createElement("td");
         td.appendChild(builder());
         tr.appendChild(td);
       }
-      cell(function () { return buildSingleSelect(d.post, function (v) { d.post = v; onScheduleFieldChange(); }); });
-      cell(function () { return buildSingleSelect(d.tarde2, function (v) { d.tarde2 = v; onScheduleFieldChange(); }); });
-      cell(function () { return buildChecklist(d.out, function (v) { d.out = v; onScheduleFieldChange(); }); });
-      cell(function () { return buildSingleSelect(d.dia, function (v) { d.dia = v; onScheduleFieldChange(); }); });
+      cell(function () { return buildSingleSelect(listify(d.dia)[0] || "", function (v) { d.dia = v; onScheduleFieldChange(d); }); });
+      cell(function () { return buildSingleSelect(d.post, function (v) { d.post = v; onScheduleFieldChange(d); }); });
+      cell(function () { return buildSingleSelect(d.tarde2, function (v) { d.tarde2 = v; onScheduleFieldChange(d); }); });
+      cell(function () {
+        // Autopsia: hasta dos personas (N. ADULTO / N. FETAL)
+        var wrap = document.createElement("div");
+        var dk = dateKeyFor(mk, d.day);
+        var cur = necroListFor(dk, d);
+        [0, 1].forEach(function (i) {
+          var sel = buildSingleSelect(cur[i] || "", function (v) {
+            var list = necroListFor(dk, d).slice();
+            list[i] = v;
+            d.necro = list.filter(function (n, j) { return n && list.indexOf(n) === j; }).join(", ");
+            delete state.necroByDay[dk];
+            onScheduleFieldChange(d);
+          });
+          sel.title = i ? "Segunda autopsia (p. ej. fetal)" : "Autopsia";
+          wrap.appendChild(sel);
+        });
+        return wrap;
+      });
+      cell(function () { return buildChecklist(d.out, function (v) { d.out = v; onScheduleFieldChange(d); }); });
+      cell(function () {
+        var inp = document.createElement("input");
+        inp.type = "text"; inp.placeholder = "—"; inp.value = d.holiday || ""; inp.maxLength = 40;
+        inp.title = "Nombre del festivo (vacío = día laborable)";
+        inp.addEventListener("change", function () {
+          var v = noAngles(inp.value.trim());
+          if (v) d.holiday = v; else delete d.holiday;
+          onScheduleFieldChange(d);
+        });
+        return inp;
+      });
       tbody.appendChild(tr);
     });
   }
-  function onScheduleFieldChange() {
+  function onScheduleFieldChange(d) {
     persist();
+    if (d && typeof planTouchDay === "function") planTouchDay(state.selectedMonth, d.day);
+    renderScheduleTable();
     if (typeof renderMeBar === "function") renderMeBar();
     renderDaySelectOptions();
     renderDayStrip();
@@ -1678,6 +1784,7 @@
   document.getElementById("restore-schedule-btn").addEventListener("click", function () {
     state.scheduleByMonth[state.selectedMonth] = JSON.parse(JSON.stringify(monthEntryForKey(state.selectedMonth).defaultSchedule));
     persist();
+    planTouchMonth(state.selectedMonth);
     renderScheduleTable();
     renderDaySelectOptions();
     renderDayStrip();
@@ -1760,13 +1867,13 @@
     fillSingleSelect(postEl, d.post);
     fillSingleSelect(tarde2El, d.tarde2);
     fillSingleSelect(diaEl, d.dia);
-    postEl.onchange = function (e) { d.post = e.target.value; onScheduleFieldChange(); };
-    tarde2El.onchange = function (e) { d.tarde2 = e.target.value; onScheduleFieldChange(); };
-    diaEl.onchange = function (e) { d.dia = e.target.value; onScheduleFieldChange(); };
+    postEl.onchange = function (e) { d.post = e.target.value; onScheduleFieldChange(d); };
+    tarde2El.onchange = function (e) { d.tarde2 = e.target.value; onScheduleFieldChange(d); };
+    diaEl.onchange = function (e) { d.dia = e.target.value; onScheduleFieldChange(d); };
 
     var outEl = document.getElementById("ds-out");
     outEl.innerHTML = "";
-    outEl.appendChild(buildChecklist(d.out, function (v) { d.out = v; onScheduleFieldChange(); }));
+    outEl.appendChild(buildChecklist(d.out, function (v) { d.out = v; onScheduleFieldChange(d); }));
     document.getElementById("ds-out-wrap").classList.toggle("out", !!d.out);
     renderPrevistas();
   }
@@ -1794,9 +1901,10 @@
         var list = necroListFor(state.selectedDay, d).slice();
         if (e.target.checked) { if (list.indexOf(name) === -1) list.push(name); }
         else { list = list.filter(function (n) { return n !== name; }); }
-        state.necroByDay[state.selectedDay] = list;
-        persist();
-        renderNecroChecklist();
+        // La autopsia es parte del planning del día: se guarda ahí y se comparte con todos.
+        d.necro = list.join(", ");
+        delete state.necroByDay[state.selectedDay];
+        onScheduleFieldChange(d);
       });
       wrap.appendChild(label);
     });
@@ -1868,13 +1976,17 @@
     var neoplasica = document.getElementById("add-neoplasica").checked;
     var dias = Math.max(0, parseInt(document.getElementById("add-dias").value, 10) || 0);
     var nota = noAngles(document.getElementById("add-nota").value.trim());
+    var refEl = document.getElementById("add-ref"), ref = normRef(refEl.value);
+    if (ref === null) { refEl.classList.add("ref-bad"); refEl.focus(); return; }
+    refEl.classList.remove("ref-bad");
     var assignTo = addAssignEl.value || null;
     var row = DATA.find(function (r) { return r.esp === esp && r.tipo === tipo; });
     if (!row) return;
     state.pending.push({
       esp: esp, tipo: tipo, media: row.media, qty: qty, complex: complex, urgent: urgent,
-      neoplasica: neoplasica, dias: dias, nota: nota, assignTo: assignTo, pid: newId()
+      neoplasica: neoplasica, dias: dias, nota: nota, assignTo: assignTo, pid: newId(), ref: qty === 1 ? ref : ""
     });
+    refEl.value = "";
     state.result = null;
     document.getElementById("add-complex").checked = false;
     document.getElementById("add-neoplasica").checked = false;
@@ -1899,12 +2011,13 @@
       var li = document.createElement("li");
       li.className = delayRowClass(p, umbral).trim();
       li.innerHTML =
-        '<div><div class="pl-name">' + p.tipo +
+        '<div><div class="pl-name">' + ((p.qty || 1) === 1 ? '<input class="ref-input" data-pi="' + i + '" placeholder="B00-000000" maxlength="11" value="' + xmlEscape(p.ref || "") + '" title="Nº de biopsia"> ' : '') + p.tipo +
         (p.urgent ? '<span class="pill-urgent">Urgente</span>' : '') +
         (p.complex ? '<span class="pill-complex">Compleja</span>' : '') +
         (p.neoplasica ? '<span class="pill-neoplasica">Neoplásica</span>' : '') +
         (p.assignTo ? '<span class="pill-urgent" style="background:var(--hema-soft);color:var(--hema-strong);">→ ' + p.assignTo + '</span>' : '') +
         (p.carriedFrom ? '<span class="pill-flag">Pendiente del ' + xmlEscape(shortDate(p.carriedFrom)) + '</span>' : '') +
+        (p.lateFrom ? '<span class="pill-flag">Llegó con retraso · prevista el ' + xmlEscape(shortDate(p.lateFrom)) + '</span>' : '') +
         (p.decaSince ? '<span class="pill-deca">Descalcificación desde ' + xmlEscape(shortDate(p.decaSince)) + '</span>' : '') + '</div>' +
         (delayFlag(p, umbral) ? '<div>' + delayFlag(p, umbral) + '</div>' : '') +
         '<div class="pl-meta">' + p.esp + ' · ' + p.qty + ' × ' + fmt1(p.media) + ' min' + diasEsperaHtml(p, umbral) + '</div>' +
@@ -1923,6 +2036,20 @@
       });
       li.appendChild(rm);
       list.appendChild(li);
+    });
+    list.querySelectorAll("input.ref-input").forEach(function (inp) {
+      inp.addEventListener("change", function () {
+        var v = normRef(inp.value), p = state.pending[parseInt(inp.dataset.pi, 10)];
+        if (v === null) { inp.classList.add("ref-bad"); return; }
+        if (!p) return;
+        p.ref = v;
+        // si ya está repartida, se actualiza también en la tarjeta
+        if (state.result) Object.keys(state.result.people).forEach(function (n) {
+          ["manana", "tarde"].forEach(function (sl) { state.result.people[n][sl].forEach(function (it) { if (String(it.uid || "").split("-")[0] === p.pid) it.ref = v; }); });
+        });
+        repartoTouched();
+        renderPending(); renderResults();
+      });
     });
     emptyHint.style.display = state.pending.length ? "none" : "block";
     document.getElementById("pending-total").textContent = fmtMin(total);
@@ -1943,7 +2070,7 @@
   function knapsackFill(items, cap) {
     var scale = 10; // times have 1 decimal of precision
     var capInt = Math.round(cap * scale);
-    var weights = items.map(function (it) { return Math.round(it.media * scale); });
+    var weights = items.map(function (it) { return Math.round((it.w !== undefined ? it.w : it.media) * scale); });
     var n = items.length;
     var prevRow = new Array(capInt + 1).fill(0);
     var rows = [prevRow];
@@ -2061,7 +2188,7 @@
           var mins = Math.round(it.media);
           var tiempoStr = Math.floor(mins / 60) + ":" + pad2(mins % 60);
           rows.push([
-            "", it.esp === "TÉCNICO" ? "SI" : "NO", 1, fechaRecepcion, fechaInclusion,
+            it.ref || "", it.esp === "TÉCNICO" ? "SI" : "NO", 1, fechaRecepcion, fechaInclusion,
             it.tipo, it.esp, tiempoStr, running > cap ? "SI" : "NO", it.dias || 0,
             "", isDelayed(it, umbral) ? "Sí" : "No", name, it.via || ""
           ]);
@@ -2309,7 +2436,7 @@
       var p = r.people[name];
       sortWorkList(p);
       var tardeItems = p.tarde;
-      var total = p.manana.reduce(function (a, x) { return a + x.media; }, 0) + tardeItems.reduce(function (a, x) { return a + x.media; }, 0);
+      var total = p.manana.concat(tardeItems).reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0);
       var tags = ownerTagsFor(owners, name, dayNumFromDateKey(r.dateKey));
       if (name === r.post) tags.push("POST");
       if (name === r.tarde2) tags.push("Tarde 2");
@@ -2322,14 +2449,14 @@
 
       function block(label, items) {
         if (!items.length) return;
-        html += '<div class="rc-block-label">' + xmlEscape(label) + ' · ' + fmtMin(items.reduce(function (a, x) { return a + x.media; }, 0)) + '</div><ul class="rc-items">';
+        html += '<div class="rc-block-label">' + xmlEscape(label) + ' · ' + fmtMin(items.reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0)) + '</div><ul class="rc-items">';
         items.forEach(function (it) {
           html += '<li class="rc-item' + delayRowClass(it, umbral) + '">' +
             '<div class="rc-item-top"><span class="rc-item-name">' + xmlEscape(it.tipo) +
             (it.urgent ? '<span class="pill-urgent">Urgente</span>' : '') +
             (it.neoplasica ? '<span class="pill-neoplasica">Neoplásica</span>' : '') +
             (isDeca(r.dateKey, it.uid, it) ? '<span class="pill-deca">Descalcificación</span>' : '') +
-            '</span><span class="num">' + fmtMin(it.media) + '</span></div>' +
+            '</span><span class="num">' + timeLabel(r.dateKey, it) + '</span></div>' +
             (delayFlag(it, umbral) ? '<div>' + delayFlag(it, umbral) + '</div>' : '') +
             (it.note ? '<div class="rc-item-note">' + xmlEscape(it.note) + '</div>' : '') +
             (it.nota ? '<div class="rc-item-personal-note">' + xmlEscape(it.nota) + '</div>' : '') +
@@ -2337,7 +2464,7 @@
         });
         html += '</ul>';
       }
-      block("Mañana (8–16h)", p.manana);
+      block("Mañana (9–16h)", p.manana);
       block("Tarde (16–20h)", tardeItems);
       if (!p.manana.length && !tardeItems.length) html += '<div class="rc-empty">Sin piezas asignadas.</div>';
       html += '</div>';
@@ -2351,8 +2478,8 @@
   // que no explicaba que son 2 estaciones en paralelo, y sin la barra.
   function buildCapacityCards(result) {
     return [
-      { label: "Estaciones · mañana (8–16h)", total: result.mananaTotal, cap: result.mananaCapacity, capLabel: result.mananaCapacity + " min (6h30 útiles × 2 estaciones, tras comida y sesión)" },
-      { label: "Estaciones · tarde (16–20h)", total: result.tardeTotal, cap: result.tardeCapacity, capLabel: result.tardeCapacity + " min (4h × 2 estaciones)" }
+      { label: "Estaciones · mañana (9–16h)", total: dynTotals(result).m, cap: result.mananaCapacity, capLabel: result.mananaCapacity + " min (6h30 útiles × 2 estaciones: de 9 a 16h menos la comida)" },
+      { label: "Estaciones · tarde (16–20h)", total: dynTotals(result).t, cap: result.tardeCapacity, capLabel: result.tardeCapacity + " min (4h × 2 estaciones)" }
     ];
   }
 
@@ -2461,11 +2588,11 @@
       // fijo, que es lo que causaba que se solaparan en columnas más estrechas.
       var innerW = colW - 28; // 14px de margen a cada lado
       mctx.font = "12px " + MONO;
-      var timeText = fmtMin(it.media);
+      var timeText = timeLabel(result.dateKey, it);
       var timeW = mctx.measureText(timeText).width;
 
       mctx.font = "600 12px " + SANS;
-      var typeLines = wrapCanvasText(mctx, it.tipo, innerW);
+      var typeLines = wrapCanvasText(mctx, (it.ref ? it.ref + " · " : "") + it.tipo, innerW);
       if (!typeLines.length) typeLines = [""];
       var lastLineW = mctx.measureText(typeLines[typeLines.length - 1]).width;
       var timeInline = (lastLineW + 10 + timeW) <= innerW;
@@ -2498,7 +2625,7 @@
     function layoutBlock(label, items) {
       if (!items.length) return null;
       var itemLayouts = items.map(layoutItem);
-      var totalMin = items.reduce(function (a, x) { return a + x.media; }, 0);
+      var totalMin = items.reduce(function (a, x) { return a + wMin(result.dateKey, x); }, 0);
       var h = 20;
       itemLayouts.forEach(function (l) { h += l.height + 6; });
       return { label: label, totalMin: totalMin, items: itemLayouts, height: h };
@@ -2508,11 +2635,11 @@
       var p = result.people[name];
       sortWorkList(p);
       var tardeItems = p.tarde;
-      var total = p.manana.reduce(function (a, x) { return a + x.media; }, 0) + tardeItems.reduce(function (a, x) { return a + x.media; }, 0);
+      var total = p.manana.concat(tardeItems).reduce(function (a, x) { return a + wMin(result.dateKey, x); }, 0);
       mctx.font = "700 9px " + SANS;
       var cappedLines = p.cappedNote ? wrapCanvasText(mctx, p.cappedNote, colW - 20) : null;
       var headH = 36 + (cappedLines ? cappedLines.length * 12 + 4 : 0);
-      var mananaBlock = layoutBlock("MAÑANA (8–16H)", p.manana);
+      var mananaBlock = layoutBlock("MAÑANA (9–16H)", p.manana);
       var tardeBlock = layoutBlock("TARDE (16–20H)", tardeItems);
       var bodyH = (mananaBlock ? mananaBlock.height : 0) + (tardeBlock ? tardeBlock.height : 0);
       if (!mananaBlock && !tardeBlock) bodyH = 26;
@@ -2780,9 +2907,15 @@
     var autoPending = state.pending.filter(function (p) { return !p.assignTo; });
 
     function makeItem(p, i) {
+      var it = makeItem0(p, i);
+      // Peso para repartir: 0 mientras está en descalcificación (su tiempo cuenta el día que se talla).
+      it.w = isDeca(state.selectedDay, it.uid, it) ? 0 : it.media;
+      return it;
+    }
+    function makeItem0(p, i) {
       if (!p.pid) p.pid = newId();
       return {
-        uid: p.pid + "-" + (i || 0), carriedFrom: p.carriedFrom || "", decaSince: p.decaSince || "", decaConf: p.decaConf || "", hist: p.hist || [], cli: p.cli || null, oid: p.oid || (p.pid + "-" + (i || 0)),
+        uid: p.pid + "-" + (i || 0), carriedFrom: p.carriedFrom || "", decaSince: p.decaSince || "", decaConf: p.decaConf || "", hist: p.hist || [], cli: p.cli || null, ref: (p.qty || 1) === 1 ? p.ref || "" : "", oid: p.oid || (p.pid + "-" + (i || 0)),
         esp: p.esp, tipo: p.tipo, media: p.media, complex: p.complex, urgent: p.urgent,
         dias: p.dias || 0, neoplasica: !!p.neoplasica, nota: p.nota || ""
       };
@@ -2838,10 +2971,10 @@
     Object.keys(ownerItemsByEsp).forEach(function (esp) {
       var sharers = rotationSharers(esp).sharers;
       var load = sharers.map(function () { return 0; });
-      ownerItemsByEsp[esp].sort(function (a, b) { return b.media - a.media; }).forEach(function (item) {
+      ownerItemsByEsp[esp].sort(function (a, b) { return b.w - a.w; }).forEach(function (item) {
         var k = 0;
         load.forEach(function (l, j) { if (l < load[k]) k = j; });
-        load[k] += item.media;
+        load[k] += item.w;
         var sh = sharers[k];
         item.via = "rotación";
         if (sh.repeat) item.rotPrio = true;
@@ -2871,12 +3004,12 @@
       var reasonLabel = reasons.indexOf("autopsia") !== -1 && reasons.indexOf("día") !== -1
         ? "Autopsia y guardia de día hoy" : reasons.indexOf("autopsia") !== -1 ? "Autopsia hoy" : "Guardia de día hoy";
       var np = person(name);
-      var ownTotal = np.manana.reduce(function (a, it) { return a + it.media; }, 0);
+      var ownTotal = np.manana.reduce(function (a, it) { return a + it.w; }, 0);
       if (ownTotal > NECRO_CAP) {
         // Trim rotation pieces down to ~2h, but fill that 2h as fully as possible (knapsack)
         // rather than an arbitrary cut, so the least amount of work spills onto everyone else.
         var packed = knapsackFill(np.manana, NECRO_CAP);
-        var keptTotal = packed.kept.reduce(function (a, it) { return a + it.media; }, 0);
+        var keptTotal = packed.kept.reduce(function (a, it) { return a + it.w; }, 0);
         var reducedBy = ownTotal - keptTotal;
         packed.excess.forEach(function (it) { it.note = reasonLabel + " (" + name + "): excedente pasa al reparto"; restoItems.push(it); });
         np.manana = packed.kept;
@@ -2923,8 +3056,8 @@
     //    y Tarde 2. Un pequeño hándicap virtual en POST hace que Tarde 2 acabe asumiendo ~1h más
     //    de "el resto" que POST (POST recibe el bloque ya avanzada la tarde y tiene menos margen).
     function currentLoad(name) {
-      var base = person(name).manana.reduce(function (a, x) { return a + x.media; }, 0) +
-                 person(name).tarde.reduce(function (a, x) { return a + x.media; }, 0);
+      var base = person(name).manana.reduce(function (a, x) { return a + x.w; }, 0) +
+                 person(name).tarde.reduce(function (a, x) { return a + x.w; }, 0);
       return base + (name && name === post && post !== tarde2 ? TARDE_POST_GAP : 0);
     }
     function poolFor(it) {
@@ -2934,7 +3067,7 @@
       return helpers;
     }
     function pickBest(it, pool) {
-      var eligible = pool.filter(function (h) { return currentLoad(h.name) + it.media <= h.cap; });
+      var eligible = pool.filter(function (h) { return currentLoad(h.name) + it.w <= h.cap; });
       var use = eligible.length ? eligible : pool;
       if (!use.length) return null;
       var best = use[0], bestScore = Infinity;
@@ -2951,17 +3084,20 @@
       if (best.name === post && best.roles.indexOf("post") !== -1) it.via = "post";
       else if (best.name === tarde2 && best.roles.indexOf("tarde2") !== -1) it.via = "tarde";
       else if (best.roles.indexOf("necro-rotation") !== -1) it.via = "rotación";
-      if (forceManana || (isOwnerR1 && it.complex)) recipient.manana.push(it); else recipient.tarde.push(it);
+      // Por la tarde solo incluyen POST y Tarde 2 (una campana cada uno): quien ayuda con «el resto»
+      // sin ser POST ni Tarde 2 (p. ej. la rotación de NECRO) lo incluye por la mañana.
+      var afternoonRole = best.roles.indexOf("post") !== -1 || best.roles.indexOf("tarde2") !== -1;
+      if (forceManana || !afternoonRole || (isOwnerR1 && it.complex)) recipient.manana.push(it); else recipient.tarde.push(it);
       best.roles.forEach(function (r) { if (recipient.roles.indexOf(r) === -1) recipient.roles.push(r); });
     }
 
-    restoItems.sort(function (a, b) { return b.media - a.media; });
+    restoItems.sort(function (a, b) { return b.w - a.w; });
     var urgentResto = restoItems.filter(isEffectiveUrgent);
     var normalResto = restoItems.filter(function (it) { return !isEffectiveUrgent(it); });
 
     urgentResto.forEach(function (it) {
       var postHelper = helpers.find(function (h) { return h.name === post && h.roles.indexOf("post") !== -1; });
-      var target = (postHelper && currentLoad(post) + it.media <= postHelper.cap) ? postHelper : pickBest(it, poolFor(it));
+      var target = (postHelper && currentLoad(post) + it.w <= postHelper.cap) ? postHelper : pickBest(it, poolFor(it));
       if (!target) return;
       place(it, target, forcesManana(it));
     });
@@ -2988,12 +3124,12 @@
     //    rotación ni asignadas a mano) de POST a Tarde 2, la más pequeña primero, hasta lograrlo.
     if (post && tarde2 && post !== tarde2 && people[post] && people[tarde2]) {
       var postP = people[post], tarde2P = people[tarde2];
-      function tardeSum(p) { return p.tarde.reduce(function (a, x) { return a + x.media; }, 0); }
+      function tardeSum(p) { return p.tarde.reduce(function (a, x) { return a + x.w; }, 0); }
       var guard = 0;
       while (tardeSum(postP) > tardeSum(tarde2P) - TARDE_POST_GAP && guard < 500) {
         var movable = postP.tarde.filter(function (it) { return it.via !== "manual" && it.via !== "rotación"; });
         if (!movable.length) break;
-        movable.sort(function (a, b) { return a.media - b.media; });
+        movable.sort(function (a, b) { return a.w - b.w; });
         var moveItem = movable[0];
         postP.tarde.splice(postP.tarde.indexOf(moveItem), 1);
         moveItem.via = "tarde";
@@ -3002,14 +3138,15 @@
       }
     }
 
-    // 8. Capacity check: 2 estaciones. Mañana: 8–16h menos comida (30min) y sesión (1h). Tarde:
+    // 8. Capacity check: 2 estaciones. Mañana: 9–16h menos comida (30min). Tarde:
     //    16–20h (última hora, con merienda, no cuenta).
     var mananaTotal = 0, tardeTotal = 0;
     Object.keys(people).forEach(function (name) {
-      mananaTotal += people[name].manana.reduce(function (a, x) { return a + x.media; }, 0);
-      tardeTotal += people[name].tarde.reduce(function (a, x) { return a + x.media; }, 0);
+      mananaTotal += people[name].manana.reduce(function (a, x) { return a + x.w; }, 0);
+      tardeTotal += people[name].tarde.reduce(function (a, x) { return a + x.w; }, 0);
     });
 
+    Object.keys(people).forEach(function (n) { people[n].manana.concat(people[n].tarde).forEach(function (it) { delete it.w; }); });
     return {
       dateKey: state.selectedDay, monthKey: monthKey,
       dayLabel: d.weekday + " " + d.day + " (" + monthEntryForKey(monthKey).label + ")",
@@ -3023,6 +3160,7 @@
 
   // ---------- Render results ----------
   function renderResults() {
+    if (!extrasReady) return; // hasta que todo el código de la página esté cargado (lo pinta el arranque)
     if (typeof renderArrastre === "function" && state.repartoExtra) { renderArrastre(); renderDecaBox(); renderAlerts(); renderPendientesTab(); }
     var empty = document.getElementById("results-empty");
     var results = document.getElementById("results");
@@ -3059,7 +3197,8 @@
     });
     if (state.me && r.people[state.me] && (r.people[state.me].manana.length + r.people[state.me].tarde.length)) {
       var mp = r.people[state.me];
-      var mm = mp.manana.reduce(function (a, x) { return a + x.media; }, 0), mt = mp.tarde.reduce(function (a, x) { return a + x.media; }, 0);
+      var mm = mp.manana.reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0), mt = mp.tarde.reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0);
+      mm += arrTallarMin(r.dateKey, state.me);
       var nP = mp.manana.length + mp.tarde.length;
       bits.unshift('<div class="banner good"><span><strong>' + xmlEscape(state.me) + '</strong>, hoy te ' + (nP === 1 ? 'toca 1 pieza' : 'tocan ' + nP + ' piezas') + ' (' + fmtMin(mm + mt) + '): ' +
         (mp.manana.length ? 'mañana ' + fmtMin(mm) : '') + (mp.manana.length && mp.tarde.length ? ' · ' : '') + (mp.tarde.length ? 'tarde ' + fmtMin(mt) : '') + '. Tu tarjeta es la primera.</span></div>');
@@ -3075,8 +3214,8 @@
     var capRow = document.getElementById("capacity-row");
     capRow.innerHTML = "";
     [
-      { label: "Estaciones · mañana (8–16h)", total: r.mananaTotal, cap: r.mananaCapacity, capLabel: r.mananaCapacity + " min (6h30 útiles × 2 estaciones, tras comida y sesión)" },
-      { label: "Estaciones · tarde (16–20h)", total: r.tardeTotal, cap: r.tardeCapacity, capLabel: r.tardeCapacity + " min (4h × 2 estaciones)" }
+      { label: "Estaciones · mañana (9–16h)", total: dynTotals(r).m, cap: r.mananaCapacity, capLabel: r.mananaCapacity + " min (6h30 útiles × 2 estaciones: de 9 a 16h menos la comida)" },
+      { label: "Estaciones · tarde (16–20h)", total: dynTotals(r).t, cap: r.tardeCapacity, capLabel: r.tardeCapacity + " min (4h × 2 estaciones)" }
     ].forEach(function (c) {
       var over = c.total > c.cap;
       var pct = Math.min(100, (c.total / c.cap) * 100);
@@ -3114,7 +3253,7 @@
 
     names.forEach(function (name) {
       var p = r.people[name];
-      var total = p.manana.reduce(function (a, x) { return a + x.media; }, 0) + p.tarde.reduce(function (a, x) { return a + x.media; }, 0);
+      var total = p.manana.concat(p.tarde).reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0) + arrTallarMin(r.dateKey, name);
       var tags = ownerTagsFor(owners, name, dayNumFromDateKey(r.dateKey));
       if (name === r.post) tags.push("POST");
       if (name === r.tarde2) tags.push("Tarde 2");
@@ -3130,7 +3269,7 @@
       var head = document.createElement("div");
       head.className = "resident-col-head";
       head.innerHTML =
-        '<div class="rc-name">' + xmlEscape(name) + " " + tags.map(function (t) { return t === "__mine__" ? '<span class="mine-tag">Tú</span>' : '<span class="rc-role-tag">' + xmlEscape(t) + '</span>'; }).join(" ") + '</div>' +
+        '<div class="rc-name">' + xmlEscape(av(name)) + " " + tags.map(function (t) { return t === "__mine__" ? '<span class="mine-tag">Tú</span>' : '<span class="rc-role-tag">' + xmlEscape(t) + '</span>'; }).join(" ") + '</div>' +
         '<div class="rc-total"><span class="num">' + fmtMin(total) + '</span> · ' + (p.manana.length + p.tarde.length) + ' piezas' +
         (function () { var all = p.manana.concat(p.tarde), n = all.filter(function (x) { return isMarked(r.dateKey, x.uid); }).length; return all.length ? ' · <b>' + n + '/' + all.length + ' incluidas</b>' : ''; })() +
         (function () { var a = arrastreOf(r.dateKey, name); return a.length ? '<br><span class="rc-item-note">+ ' + a.length + ' pendiente(s) de días anteriores (' + fmtMin(a.reduce(function (s, x) { return s + x.media; }, 0)) + ', no cuentan en el reparto)</span>' : ''; })() +
@@ -3143,7 +3282,7 @@
         if (!items.length) return;
         var lbl = document.createElement("div");
         lbl.className = "rc-block-label";
-        lbl.textContent = blockLabel + " · " + fmtMin(items.reduce(function (a, x) { return a + x.media; }, 0));
+        lbl.textContent = blockLabel + " · " + fmtMin(items.reduce(function (a, x) { return a + wMin(r.dateKey, x); }, 0));
         col.appendChild(lbl);
         var ul = document.createElement("ul");
         ul.className = "rc-items";
@@ -3157,12 +3296,13 @@
             '<option value="tarde"' + (slotKey === "tarde" ? " selected" : "") + '>Tarde</option>';
           li.innerHTML =
             '<div class="rc-item-top"><label class="done-check"><input type="checkbox" class="done-input" data-uid="' + xmlEscape(it.uid || "") + '"' + (isDone ? " checked" : "") + ' title="Marcar como incluida"><span class="rc-item-name">' + it.tipo + '</span></label>' +
-            '<span class="num">' + fmtMin(it.media) + '</span></div>' +
+            '<span class="num">' + timeLabel(r.dateKey, it) + '</span></div>' +
+            '<div><input class="ref-input card-ref" data-name="' + xmlEscape(name) + '" data-slot="' + slotKey + '" data-idx="' + ii + '" placeholder="B00-000000" maxlength="11" value="' + xmlEscape(it.ref || "") + '" title="Nº de biopsia"></div>' +
             '<div>' + (it.urgent ? '<span class="pill-urgent" style="margin-left:0;">Urgente</span>' : '') +
             (it.neoplasica ? '<span class="pill-neoplasica">Neoplásica</span>' : '') +
             (it.carriedFrom ? '<span class="pill-flag">Del ' + xmlEscape(shortDate(it.carriedFrom)) + '</span>' : '') +
             (inDeca ? '<span class="pill-deca">Descalcificación desde ' + xmlEscape(shortDate(decaSinceOf(r.dateKey, it.uid, it))) + '</span>' : '') + '</div>' +
-            '<label class="deca-check"><input type="checkbox" class="deca-input" data-uid="' + xmlEscape(it.uid || "") + '"' + (inDeca ? " checked" : "") + '> En descalcificación</label>' +
+            '<label class="deca-check"><input type="checkbox" class="deca-input" data-uid="' + xmlEscape(it.uid || "") + '"' + (inDeca ? " checked" : "") + ' title="Mientras está en descalcificación cuenta 0 min; quita la marca el día que la talles y contará su tiempo"> En descalcificación</label>' +
             (delayFlag(it, umbral) ? '<div>' + delayFlag(it, umbral) + '</div>' : '') +
             (it.note ? '<span class="rc-item-note">' + it.note + '</span>' : '') +
             infoBlockHtml(r.dateKey, it) +
@@ -3175,7 +3315,7 @@
         });
         col.appendChild(ul);
       }
-      renderBlock("Mañana (8–16h)", p.manana, "manana");
+      renderBlock("Mañana (9–16h)", p.manana, "manana");
       renderBlock("Tarde (16–20h)", p.tarde, "tarde");
 
       if (!p.manana.length && !p.tarde.length) {
@@ -3217,6 +3357,20 @@
     });
     colsEl.querySelectorAll("input.done-input").forEach(function (inp) {
       inp.addEventListener("change", function () { setMark(r.dateKey, inp.dataset.uid, inp.checked); });
+    });
+    colsEl.querySelectorAll("input.card-ref").forEach(function (inp) {
+      inp.addEventListener("change", function () {
+        var v = normRef(inp.value);
+        if (v === null) { inp.classList.add("ref-bad"); return; }
+        var item = r.people[inp.dataset.name][inp.dataset.slot][parseInt(inp.dataset.idx, 10)];
+        if (!item) return;
+        item.ref = v;
+        // también en la pieza pendiente de la que sale, para que no se pierda al recalcular
+        var pid = String(item.uid || "").split("-")[0];
+        state.pending.forEach(function (p) { if (p.pid === pid && (p.qty || 1) === 1) p.ref = v; });
+        repartoTouched();
+        renderResults();
+      });
     });
     colsEl.querySelectorAll("input.deca-input").forEach(function (inp) {
       inp.addEventListener("change", function () { setDeca(r.dateKey, inp.dataset.uid, inp.checked); });
@@ -3553,7 +3707,7 @@
       }
       byMonth[key].days[dt.d] = entry;
     });
-    if (guessedHolidays.length) warnings.push("Días laborables sin DÍA/POST/TARDE 2 — los he marcado como festivos: " + guessedHolidays.join(", ") + ". Si no lo son, rellénalos en Ajustes.");
+    if (guessedHolidays.length) warnings.push("Días laborables sin DÍA/POST/TARDE 2 — los he marcado como festivos: " + guessedHolidays.join(", ") + ". Si no lo son, rellénalos en la pestaña Planning.");
     if (wdMismatch.length) warnings.push("El día de la semana no cuadra con la fecha en: " + wdMismatch.join(", ") + " — revisa el mes/año.");
 
     var keys = Object.keys(byMonth).sort();
@@ -3572,7 +3726,7 @@
         }
         schedule.push(e);
       }
-      if (missing.length) warnings.push(MONTH_NAMES[info.month] + ": faltan los días laborables " + missing.join(", ") + " — quedan vacíos (se pueden rellenar en Ajustes).");
+      if (missing.length) warnings.push(MONTH_NAMES[info.month] + ": faltan los días laborables " + missing.join(", ") + " — quedan vacíos (se pueden rellenar en la pestaña Planning).");
       return { key: key, year: info.year, month: info.month, schedule: schedule };
     });
   }
@@ -3954,12 +4108,13 @@
         var working = m.schedule.filter(function (d) { return !d.weekend && !d.holiday; }).length;
         summary.push("<b>" + MONTH_NAMES[m.month] + " " + m.year + "</b> " + (existed ? "sustituido" : "añadido") + ": " + working + " días laborables" + rotNote);
       });
+      months.forEach(function (m) { delete state.planMod[m.key]; planTouchMonth(m.key); });
       state.selectedMonth = months[0].key;
       state.selectedDay = dateKeyFor(months[0].key, 1);
       persist();
       refreshAfterPlanningChange();
       var html = "✓ " + summary.join("<br>✓ ") +
-        "<br>Ya puedes usarlo en este navegador. Para que lo vea todo el mundo, pulsa «3 · Descargar planning.json» y súbelo a GitHub.";
+        (fsDir ? "<br>Guardado en la carpeta compartida: en un minuto lo ven todos." : "<br>Ojo: no hay carpeta compartida conectada (pestaña DÍA), así que de momento solo está en este navegador.");
       if (warnings.length) html += "<br><b>Revisa:</b><ul><li>" + warnings.slice(0, 25).join("</li><li>") + "</li>" + (warnings.length > 25 ? "<li>…y " + (warnings.length - 25) + " avisos más</li>" : "") + "</ul>";
       showPlanningStatus(warnings.length ? "warn" : "ok", html);
     }).catch(function (e) {
@@ -4111,6 +4266,8 @@
       }
       installMonth(entry);
       state.planningHashByMonth[rec.key] = hash;
+      // Viene del planning.json de GitHub: no cuenta como cambio reciente (manda la carpeta compartida).
+      if (state.planMod) delete state.planMod[rec.key];
       (known ? changed : added).push(entry.label);
     });
     return { changed: changed, added: added };
@@ -4280,7 +4437,10 @@
       var who = [e.nombre, e.edad ? e.edad + " a" : "", e.sexo].filter(Boolean).join(" · ");
       li.innerHTML =
         '<div class="dd-main"><div><span class="dd-who">' + xmlEscape(who || "(sin nombre)") + '</span>' +
-        (e.added ? '<span class="pill-flag">En el reparto</span>' : '') + '</div>' +
+        (e.added ? '<span class="pill-flag">En el reparto</span>' : '') +
+        (e.from ? '<span class="pill-flag">Rescatada del ' + xmlEscape(shortDate(e.from)) + '</span>' : '') +
+        (e.resc ? '<span class="pill-sinclasificar">Pasada al ' + xmlEscape(shortDate(e.resc)) + '</span>' : '') +
+        (e.desc ? '<span class="pill-sinclasificar">No llegará</span>' : '') + '</div>' +
         '<div class="pl-meta">' + xmlEscape(e.esp) + ' · ' + xmlEscape(e.tipo) + (row ? ' · ' + row.media + ' min' : '') + '</div>' +
         (clinicalNote(e) ? '<div class="dd-clin">' + xmlEscape(clinicalNote(e)) + '</div>' : '') + '</div>';
       var btns = document.createElement("div");
@@ -4302,6 +4462,7 @@
       ul.appendChild(li);
     });
     document.getElementById("dd-empty").style.display = list.length ? "none" : "block";
+    renderDdLate();
   }
   renderDeDia();
 
@@ -4355,6 +4516,47 @@
     return html;
   }
   var prevChecked = {};
+  // Previstas de días anteriores que nadie marcó como llegadas (ni pasadas a otro día ni descartadas),
+  // de las fechas anteriores a refKey (hasta 14 días).
+  function ddFind(k, id) { return ddList(k).filter(function (x) { return x.id === id; })[0] || null; }
+  function lateDeDia(refKey) {
+    var out = [];
+    daysBackFrom(refKey, 14).forEach(function (k) {
+      ddList(k).forEach(function (e) { if (!e.added && !e.resc && !e.desc) out.push({ k: k, e: e }); });
+    });
+    return out;
+  }
+  function prevItemLi(e, key, late) {
+    var li = document.createElement("li");
+    li.className = "prev-item" + (e.added ? " done" : "");
+    var who = [e.nombre, e.edad ? e.edad + " a" : "", e.sexo].filter(Boolean).join(" · ");
+    li.innerHTML =
+      '<label class="prev-check"><input type="checkbox"' + (e.added ? " checked disabled" : (prevChecked[e.id] ? " checked" : "")) + '>' +
+      '<span style="min-width:0;"><span class="dd-who">' + xmlEscape(who || "(sin nombre)") + '</span>' +
+      (late ? '<span class="pill-flag">Prevista el ' + xmlEscape(shortDate(key)) + '</span>' : '') +
+      (e.from ? '<span class="pill-flag">Rescatada del ' + xmlEscape(shortDate(e.from)) + '</span>' : '') +
+      (e.added ? '<span class="pill-flag">Ya en el reparto</span>' : '') +
+      (clinicalNote(e) ? '<div class="dd-clin">' + xmlEscape(clinicalNote(e)) + '</div>' : '') +
+      '</span></label>' +
+      '<select' + (e.added ? " disabled" : "") + ' title="Cirugía / tipo de pieza (cámbialo si fue otra)">' + tipoOptionsHtml(e.esp, e.tipo) + '</select>';
+    li.style.flexDirection = "column";
+    li.style.alignItems = "stretch";
+    li.querySelector("input").addEventListener("change", function (ev) { prevChecked[e.id] = ev.target.checked; renderPrevAddBtn(); });
+    li.querySelector("select").addEventListener("change", function (ev) {
+      var parts = ev.target.value.split("||");
+      var cur = ddFind(key, e.id) || e; // la lista puede haberse renovado al leer la carpeta
+      cur.esp = parts[0]; cur.tipo = parts[1]; cur.mod = Date.now();
+      persist();
+      fsSchedule(key);
+      if (document.getElementById("panel-dedia").classList.contains("active")) renderDeDia();
+    });
+    return li;
+  }
+  function renderPrevAddBtn() {
+    var recKey = dateKeyFromDate(previousWorkingDayDate(state.selectedDay));
+    var any = ddList(recKey).some(function (e) { return !e.added; }) || lateDeDia(recKey).length;
+    document.getElementById("prev-add-btn").style.display = any ? "block" : "none";
+  }
   function renderPrevistas() {
     var ul = document.getElementById("prev-list");
     if (!ul) return;
@@ -4363,38 +4565,25 @@
     var list = ddList(recKey);
     document.getElementById("prev-sub").textContent = "Apuntadas por quien estuvo de día el " + longDate(recKey) + " (día de recepción de este reparto).";
     ul.innerHTML = "";
-    list.forEach(function (e) {
-      var li = document.createElement("li");
-      li.className = "prev-item" + (e.added ? " done" : "");
-      var who = [e.nombre, e.edad ? e.edad + " a" : "", e.sexo].filter(Boolean).join(" · ");
-      li.innerHTML =
-        '<label class="prev-check"><input type="checkbox"' + (e.added ? " checked disabled" : (prevChecked[e.id] ? " checked" : "")) + '>' +
-        '<span style="min-width:0;"><span class="dd-who">' + xmlEscape(who || "(sin nombre)") + '</span>' +
-        (e.added ? '<span class="pill-flag">Ya en el reparto</span>' : '') +
-        (clinicalNote(e) ? '<div class="dd-clin">' + xmlEscape(clinicalNote(e)) + '</div>' : '') +
-        '</span></label>' +
-        '<select' + (e.added ? " disabled" : "") + ' title="Cirugía / tipo de pieza (cámbialo si fue otra)">' + tipoOptionsHtml(e.esp, e.tipo) + '</select>';
-      li.style.flexDirection = "column";
-      li.style.alignItems = "stretch";
-      li.querySelector("input").addEventListener("change", function (ev) { prevChecked[e.id] = ev.target.checked; });
-      li.querySelector("select").addEventListener("change", function (ev) {
-        var parts = ev.target.value.split("||");
-        e.esp = parts[0]; e.tipo = parts[1]; e.mod = Date.now();
-        persist();
-        fsSchedule(recKey);
-        if (document.getElementById("panel-dedia").classList.contains("active")) renderDeDia();
-      });
-      ul.appendChild(li);
-    });
+    list.filter(function (e) { return !e.desc; }).forEach(function (e) { ul.appendChild(prevItemLi(e, recKey, false)); });
     var empty = document.getElementById("prev-empty");
     empty.style.display = list.length ? "none" : "block";
-    empty.textContent = "No hay piezas previstas apuntadas en «DÍA» para el " + longDate(recKey) + " en este navegador.";
-    document.getElementById("prev-add-btn").style.display = list.some(function (e) { return !e.added; }) ? "block" : "none";
+    empty.textContent = "No hay piezas previstas apuntadas en «DÍA» para el " + longDate(recKey) + ".";
+    // Previstas de días anteriores sin llegar
+    var late = lateDeDia(recKey);
+    var det = document.getElementById("prev-late"), lul = document.getElementById("prev-late-list");
+    det.style.display = late.length ? "" : "none";
+    document.getElementById("prev-late-sum").textContent = "Previstas de días anteriores sin llegar (" + late.length + ")";
+    lul.innerHTML = "";
+    late.forEach(function (x) { lul.appendChild(prevItemLi(x.e, x.k, true)); });
+    renderPrevAddBtn();
   }
   document.getElementById("prev-add-btn").addEventListener("click", function () {
     var recKey = dateKeyFromDate(previousWorkingDayDate(state.selectedDay));
-    var n = 0;
-    ddList(recKey).forEach(function (e) {
+    var n = 0, touched = {};
+    var cands = ddList(recKey).map(function (e) { return { k: recKey, e: e }; }).concat(lateDeDia(recKey));
+    cands.forEach(function (x) {
+      var e = x.e;
       if (e.added || !prevChecked[e.id]) return;
       var row = DATA.find(function (r) { return r.esp === e.esp && r.tipo === e.tipo; });
       if (!row) return;
@@ -4402,12 +4591,14 @@
         esp: row.esp, tipo: row.tipo, media: row.media, qty: 1, complex: false,
         urgent: AUTO_URGENT_SPECIALTIES.indexOf(row.esp) !== -1, neoplasica: false, dias: 0,
         nota: "", assignTo: null, fromDeDia: e.id, pid: newId(),
+        lateFrom: x.k !== recKey ? x.k : "",
         // Ficha clínica para POST: sin nombre (el nombre solo está en DÍA, para reconocer la pieza).
-        cli: { edad: e.edad || "", sexo: e.sexo || "", neo: !!e.neo, intraop: !!e.intraop, loc: e.loc || "", clin: e.clin || "", dd: recKey }
+        cli: { edad: e.edad || "", sexo: e.sexo || "", neo: !!e.neo, intraop: !!e.intraop, loc: e.loc || "", clin: e.clin || "", dd: e.from || x.k }
       });
       e.added = true;
       e.mod = Date.now();
       delete prevChecked[e.id];
+      touched[x.k] = true;
       n++;
     });
     if (!n) return;
@@ -4416,8 +4607,54 @@
     renderPending();
     renderResults();
     renderPrevistas();
-    fsSchedule(recKey);
+    Object.keys(touched).forEach(function (k) { fsSchedule(k); });
   });
+  // Pestaña DÍA: lo que no llegó de días anteriores, para rescatarlo a la lista de hoy.
+  function renderDdLate() {
+    var k = ddKey(), late = lateDeDia(k);
+    var card = document.getElementById("dd-late-card"), ul = document.getElementById("dd-late-list");
+    card.style.display = late.length ? "" : "none";
+    ul.innerHTML = "";
+    var todayPostRec = dateKeyFromDate(previousWorkingDayDate(todayKey()));
+    late.forEach(function (x) {
+      var e = x.e, li = document.createElement("li");
+      li.className = "dd-item";
+      var row = DATA.find(function (r) { return r.esp === e.esp && r.tipo === e.tipo; });
+      var who = [e.nombre, e.edad ? e.edad + " a" : "", e.sexo].filter(Boolean).join(" · ");
+      li.innerHTML =
+        '<div class="dd-main"><div><span class="dd-who">' + xmlEscape(who || "(sin nombre)") + '</span>' +
+        '<span class="pill-flag">Prevista el ' + xmlEscape(shortDate(x.k)) + '</span>' +
+        (x.k === todayPostRec && k === todayKey() ? '<span class="pill-urgent" title="Es la lista que POST está repasando hoy">Hoy en POST</span>' : '') +
+        (e.from ? '<span class="pill-flag">Rescatada del ' + xmlEscape(shortDate(e.from)) + '</span>' : '') + '</div>' +
+        '<div class="pl-meta">' + xmlEscape(e.esp) + ' · ' + xmlEscape(e.tipo) + (row ? ' · ' + row.media + ' min' : '') + '</div>' +
+        (clinicalNote(e) ? '<div class="dd-clin">' + xmlEscape(clinicalNote(e)) + '</div>' : '') + '</div>';
+      var btns = document.createElement("div");
+      btns.className = "dd-btns";
+      var take = document.createElement("button"); take.className = "btn btn-ghost btn-sm"; take.textContent = "Pasar a mi lista";
+      take.title = "Añadirla a las previstas del " + longDate(k) + " (la verá POST del siguiente día laborable)";
+      take.addEventListener("click", function () {
+        e = ddFind(x.k, e.id) || e; // la lista puede haberse renovado al leer la carpeta
+        var list = state.deDia[k] = state.deDia[k] || [];
+        var copy = cleanPiece(e);
+        copy.id = newId(); copy.from = e.from || x.k; copy.added = false; copy.resc = ""; copy.desc = false; copy.mod = Date.now();
+        list.push(copy);
+        e.resc = k; e.mod = Date.now();
+        persist(); renderDeDia(); renderPrevistas();
+        fsSchedule(x.k); fsSchedule(k);
+      });
+      var drop = document.createElement("button"); drop.className = "btn-danger-text"; drop.textContent = "No llegará";
+      drop.addEventListener("click", function () {
+        if (drop.dataset.armed !== "1") { drop.dataset.armed = "1"; drop.textContent = "¿Seguro?"; return; }
+        e = ddFind(x.k, e.id) || e;
+        e.desc = true; e.mod = Date.now();
+        persist(); renderDeDia(); renderPrevistas();
+        fsSchedule(x.k);
+      });
+      btns.appendChild(take); btns.appendChild(drop);
+      li.appendChild(btns);
+      ul.appendChild(li);
+    });
+  }
   renderPrevistas();
 
   // =====================================================================================
@@ -4430,7 +4667,10 @@
     return {
       id: String(e.id), nombre: noAngles(e.nombre), edad: String(e.edad || ""), sexo: e.sexo === "M" || e.sexo === "F" ? e.sexo : "",
       esp: String(e.esp || ""), tipo: String(e.tipo || ""), neo: !!e.neo, intraop: !!e.intraop,
-      loc: noAngles(e.loc), clin: noAngles(e.clin), added: !!e.added, mod: +e.mod || 0
+      loc: noAngles(e.loc), clin: noAngles(e.clin), added: !!e.added, mod: +e.mod || 0,
+      from: /^\d{4}-\d{2}-\d{2}$/.test(e.from || "") ? e.from : "",
+      resc: /^\d{4}-\d{2}-\d{2}$/.test(e.resc || "") ? e.resc : "",
+      desc: !!e.desc
     };
   }
   var FS_SUPPORTED = (function () {
@@ -4441,7 +4681,7 @@
   var fsLastSync = null;
   var fsLastError = "";
   var fsTimers = {};
-  var FS_FILE_RE = /^(?:de_dia|reparto)_(\d{4}-\d{2}-\d{2})\.json$/;
+  var FS_FILE_RE = /^(?:de_dia|reparto|campanas)_(\d{4}-\d{2}-\d{2})\.json$/;
 
   function idbOpen() {
     return new Promise(function (res, rej) {
@@ -4548,11 +4788,14 @@
   function fsSyncVisible() {
     if (!fsDir) return Promise.resolve();
     var keys = [ddKey(), dateKeyFromDate(previousWorkingDayDate(state.selectedDay))];
+    // y los de días anteriores (hasta 14), para ver las previstas que aún no han llegado
+    daysBackFrom(ddKey(), 14).concat(daysBackFrom(keys[1], 14)).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
     if (keys[1] === keys[0]) keys.pop();
     var changed = false, chain = Promise.resolve();
     keys.forEach(function (k) { chain = chain.then(function () { return fsSyncDay(k); }).then(function (c) { changed = changed || c; }); });
-    chain = chain.then(function () { return fsSyncReparto(dateKeyFromDate(previousWorkingDayDate(state.selectedDay))); })
+    chain = chain.then(function () { return fsSyncPlanning(); })
       .then(function () { return fsSyncReparto(state.selectedDay); })
+      .then(function () { return fsLoadCarrySource(state.selectedDay); })
       .then(function () { applyCarryOver(state.selectedDay); });
     return chain.then(function () { fsAfterSync(changed); }).catch(fsFail);
   }
@@ -4735,7 +4978,8 @@
 
   // =====================================================================================
   // ---------- ORGANIZACIÓN DE INCLUSIÓN: reservar campana (Google Sheet compartida) ----------
-  var ORG_START = 8 * 60, ORG_END = 16 * 60, ORG_SLOT = 30, ORG_CAMPANAS = [1, 2];
+  // Campanas de 9 a 20h: mañana 9–16h (antes de las 9 se llega, se organiza y hay sesiones) y tarde 16–20h.
+  var ORG_START = 9 * 60, ORG_END = 20 * 60, ORG_MORNING_END = 16 * 60, ORG_SLOT = 30, ORG_CAMPANAS = [1, 2];
   var orgDateEl = document.getElementById("org-date");
   var orgBookings = [];
   var orgLoadedAt = null;
@@ -4746,6 +4990,7 @@
 
   function apiList(fecha) {
     var url = bookingsUrl();
+    if (!url && fsDir) return folderList(fecha).then(function (d) { return d.reservas; });
     if (!url) return Promise.resolve((state.localBookings[fecha] || []).slice());
     return fetch(url + (url.indexOf("?") === -1 ? "?" : "&") + "action=list&fecha=" + encodeURIComponent(fecha) + "&t=" + Date.now())
       .then(function (r) { return r.json(); })
@@ -4753,6 +4998,7 @@
   }
   function apiPost(body) {
     var url = bookingsUrl();
+    if (!url && fsDir) return folderPost(body);
     if (!url) {
       var list = state.localBookings[body.fecha] = state.localBookings[body.fecha] || [];
       if (body.action === "add") {
@@ -4777,12 +5023,14 @@
     var fecha = orgDateEl.value || todayKey();
     document.getElementById("org-date-label").textContent = longDate(fecha);
     renderOrgAssigned();
-    return apiList(fecha).then(function (list) {
+    return (fsDir ? fsSyncPrefs().catch(function () {}) : Promise.resolve()).then(function () { return apiList(fecha); }).then(function (list) {
       if ((orgDateEl.value || todayKey()) !== fecha) return;
       orgBookings = list.map(function (r) { return { id: String(r.id), campana: +r.campana, inicio: +r.inicio, fin: +r.fin, nombre: String(r.nombre || ""), motivo: String(r.motivo || ""), nota: String(r.nota || "") }; });
       orgLoadedAt = new Date();
       if (bookingsUrl()) orgConn("ok", "Reservas compartidas (Google Sheet) · actualizado a las " + pad2(orgLoadedAt.getHours()) + ":" + pad2(orgLoadedAt.getMinutes()) + ".");
-      else orgConn("warn", "<b>Modo local:</b> estas reservas solo se ven en este ordenador. Para compartirlas, configura la hoja de Google (abajo).");
+      else if (fsDir) orgConn("ok", "Reservas compartidas en la carpeta del servicio · actualizado a las " + pad2(orgLoadedAt.getHours()) + ":" + pad2(orgLoadedAt.getMinutes()) + ".");
+      else orgConn("warn", "<b>Modo local:</b> estas reservas solo se ven en este ordenador. Conecta la carpeta compartida (pestaña DÍA) para que las vean todos.");
+      renderOrgAssigned();
       renderOrgGrid();
     }).catch(function () {
       orgConn("err", "No se han podido cargar las reservas compartidas (¿sin conexión, o la URL del script no es correcta?).");
@@ -4796,7 +5044,8 @@
     var covered = {};
     for (var m = ORG_START; m < ORG_END; m += ORG_SLOT) {
       var tr = document.createElement("tr");
-      var tdT = document.createElement("td"); tdT.className = "org-time"; tdT.textContent = hhmm(m); tr.appendChild(tdT);
+      if (m === ORG_MORNING_END) tr.className = "org-tarde-start";
+      var tdT = document.createElement("td"); tdT.className = "org-time"; tdT.textContent = hhmm(m) + (m === ORG_START ? " mañana" : m === ORG_MORNING_END ? " tarde" : ""); tr.appendChild(tdT);
       ORG_CAMPANAS.forEach(function (c) {
         if (covered[c + ":" + m]) return;
         var b = orgBookings.filter(function (x) { return x.campana === c && x.inicio <= m && x.fin > m; })[0];
@@ -4806,7 +5055,7 @@
           for (var k = 1; k < span; k++) covered[c + ":" + (m + k * ORG_SLOT)] = true;
           td.rowSpan = span;
           td.className = "org-booked";
-          td.innerHTML = '<div class="org-booking-name">' + xmlEscape(b.nombre) + '</div>' +
+          td.innerHTML = '<div class="org-booking-name">' + xmlEscape(av(b.nombre)) + '</div>' +
             '<div class="org-booking-meta">' + hhmm(b.inicio) + '–' + hhmm(b.fin) + ' · ' + xmlEscape(b.motivo) + '</div>' +
             (b.nota ? '<div class="org-booking-meta"><i>' + xmlEscape(b.nota) + '</i></div>' : '');
           var rm = document.createElement("button");
@@ -4834,19 +5083,24 @@
   function renderOrgAssigned() {
     var el = document.getElementById("org-assigned");
     var fecha = orgDateEl.value;
-    var r = state.result;
-    if (!r || r.dateKey !== fecha) {
-      el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;">Cuando el reparto de este día esté calculado, aquí verás cuánto tiene asignado cada residente por la mañana para reservar ese tiempo.</p>';
+    var r = /^\d{4}-\d{2}-\d{2}$/.test(fecha || "") && typeof dayData === "function" ? dayData(fecha).result : null;
+    if (!r) {
+      el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;">Cuando el reparto de este día esté calculado, aquí verás cuánto tiene asignado cada residente de mañana y de tarde para reservar ese tiempo.</p>';
       return;
     }
-    var rows = Object.keys(r.people).map(function (n) {
-      return { n: n, min: r.people[n].manana.reduce(function (a, x) { return a + x.media; }, 0) };
-    }).filter(function (x) { return x.min > 0; });
-    if (!rows.length) { el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;">Nadie tiene inclusión asignada por la mañana este día.</p>'; return; }
-    el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;"><b>Asignado por la mañana en el reparto:</b></p><ul class="org-assigned-list">' +
+    var sumOf = function (list) { return list.filter(function (x) { return !isMarked(fecha, x.uid); }).reduce(function (a, x) { return a + wMin(fecha, x); }, 0); };
+    var names = Object.keys(r.people);
+    Object.keys((state.repartoExtra[fecha] || {}).arrastre || {}).forEach(function (n) { if (names.indexOf(n) === -1) names.push(n); });
+    var rows = names.map(function (n) {
+      var p = r.people[n] || { manana: [], tarde: [] };
+      return { n: n, min: sumOf(p.manana) + arrTallarMin(fecha, n), tmin: sumOf(p.tarde) };
+    }).filter(function (x) { return x.min > 0 || x.tmin > 0; });
+    if (!rows.length) { el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;">Nadie tiene inclusión pendiente asignada este día.</p>'; return; }
+    el.innerHTML = '<p class="settings-note" style="margin:10px 0 0;"><b>Por incluir según el reparto:</b></p><ul class="org-assigned-list">' +
       rows.map(function (x) {
-        var booked = orgBookings.some(function (b) { return b.nombre === x.n; });
-        return '<li>' + xmlEscape(x.n) + ': ' + fmtMin(x.min) + (booked ? ' · ya ha reservado' : ' · <a href="#" data-n="' + xmlEscape(x.n) + '" data-min="' + x.min + '">reservar</a>') + '</li>';
+        var bookedMin = orgBookings.filter(function (b) { return b.nombre === x.n; }).reduce(function (a, b) { return a + b.fin - b.inicio; }, 0);
+        return '<li>' + xmlEscape(av(x.n)) + ': ' + (x.min ? 'mañana ' + fmtMin(x.min) : '') + (x.min && x.tmin ? ' · ' : '') + (x.tmin ? 'tarde ' + fmtMin(x.tmin) : '') +
+          (bookedMin ? ' · reservado ' + fmtMin(bookedMin) : ' · <a href="#" data-n="' + xmlEscape(x.n) + '" data-min="' + (x.min || x.tmin) + '">reservar a mano</a>') + '</li>';
       }).join("") + '</ul>';
     el.querySelectorAll("a[data-n]").forEach(function (a) {
       a.addEventListener("click", function (ev) {
@@ -5016,6 +5270,8 @@
       if (t.dataset.panel === "reparto") renderPrevistas();
       if (t.dataset.panel === "dedia" || t.dataset.panel === "reparto" || t.dataset.panel === "pendientes") fsSyncVisible();
       if (t.dataset.panel === "pendientes") renderPendientesTab();
+      if (t.dataset.panel === "planning") { renderPlanShare(); fsSyncVisible(); }
+      if (t.dataset.panel === "org") renderPrefs();
     });
   });
   orgDateEl.addEventListener("input", function () { orgDateEl.dataset.touched = "1"; });
@@ -5033,6 +5289,7 @@
   if (!state.repartoMeta || typeof state.repartoMeta !== "object") state.repartoMeta = {};
   if (!state.repartoActiveDay) state.repartoActiveDay = state.selectedDay;
   var repartoNotice = "";
+  var extrasReady;
   (function purgeOldRepartos() {
     var limit = new Date(); limit.setDate(limit.getDate() - 14);
     var lk = dateKeyFromDate(limit);
@@ -5085,13 +5342,14 @@
     if (/^\d{4}-\d{2}-\d{2}$/.test(it.decaSince || "")) o.decaSince = it.decaSince;
     if (/^\d{4}-\d{2}-\d{2}$/.test(it.decaConf || "")) o.decaConf = it.decaConf;
     if (typeof it.oid === "string" && /^[a-z0-9-]{1,40}$/.test(it.oid)) o.oid = it.oid;
+    if (typeof it.ref === "string" && /^B\d{2}-\d{6}$/.test(it.ref)) o.ref = it.ref;
     if (it.cli && typeof it.cli === "object") {
       var c = it.cli, txt = function (v, n) { return noAngles(String(v || "")).slice(0, n); };
       o.cli = { edad: txt(c.edad, 3), sexo: c.sexo === "M" || c.sexo === "F" ? c.sexo : "", neo: !!c.neo, intraop: !!c.intraop,
         loc: txt(c.loc, 80), clin: txt(c.clin, 300), dd: /^\d{4}-\d{2}-\d{2}$/.test(c.dd || "") ? c.dd : "" };
     }
     if (Array.isArray(it.hist) && it.hist.length) o.hist = it.hist.filter(function (h) { return h && /^\d{4}-\d{2}-\d{2}$/.test(h.d || ""); })
-      .slice(-30).map(function (h) { return { d: h.d, w: allowedName(h.w) || "sin repartir" }; });
+      .slice(-120).map(function (h) { return { d: h.d, w: allowedName(h.w) || "sin repartir" }; });
     return o;
   }
   function cleanPending(list) {
@@ -5101,6 +5359,7 @@
       it.qty = Math.min(99, Math.max(1, parseInt(p.qty, 10) || 1));
       it.assignTo = allowedName(p.assignTo) || null;
       if (p.fromDeDia) it.fromDeDia = String(p.fromDeDia);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(p.lateFrom || "")) it.lateFrom = p.lateFrom;
       it.pid = typeof p.pid === "string" && /^[a-z0-9]{1,30}$/.test(p.pid) ? p.pid : newId();
       delete it.uid;
       return it;
@@ -5236,6 +5495,23 @@
     renderResults();
     fsScheduleReparto(k);
   }
+  // Minutos que cuenta hoy una pieza: 0 mientras está en descalcificación; su tiempo entero el día que se talla.
+  function wMin(k, it) { return isDeca(k, it.uid, it) ? 0 : it.media; }
+  function timeLabel(k, it) { return isDeca(k, it.uid, it) ? "0 min (" + fmtMin(it.media) + " al tallar)" : fmtMin(it.media); }
+  function dynTotals(r) {
+    var m = 0, t = 0;
+    Object.keys(r.people || {}).forEach(function (n) {
+      r.people[n].manana.forEach(function (x) { m += wMin(r.dateKey, x); });
+      r.people[n].tarde.forEach(function (x) { t += wMin(r.dateKey, x); });
+    });
+    return { m: m, t: t };
+  }
+  // Pendientes de días anteriores que salen de descalcificación hoy (estaban en descalcificación y
+  // se ha quitado la marca): ese día se tallan, así que su tiempo cuenta en la mañana de su residente.
+  function decaEndedToday(k, it) { return !!it.decaSince && !isDeca(k, it.uid, it) && !isMarked(k, it.uid); }
+  function arrTallarMin(k, name) {
+    return arrastreOf(k, name).filter(function (it) { return decaEndedToday(k, it); }).reduce(function (a, it) { return a + it.media; }, 0);
+  }
   function decaConfOf(k, uid, it) {
     var e = state.repartoExtra && state.repartoExtra[k], m = e && e.deca && uid ? e.deca[uid] : null;
     return (m && m.d && m.conf) || (it && it.decaConf) || "";
@@ -5318,8 +5594,11 @@
     if (k !== todayKey() || k !== state.repartoActiveDay) return false;
     var ex = extraOf(k);
     if (ex.carriedFrom) return false;
-    var pk = dateKeyFromDate(previousWorkingDayDate(k));
-    if (!pk || pk >= k) return false;
+    // Se trae del último día con reparto (normalmente el laborable anterior; si algún día nadie
+    // abrió el reparto, del anterior a ese), buscando hasta 14 días atrás.
+    var pk = findCarrySource(k);
+    if (!pk) return false;
+    var step = Math.max(1, workingDaysBetween(pk, k)); // días de espera que se suman
     var pd = dayData(pk), pex = state.repartoExtra[pk] || {};
     var hasPrev = !!pd.result || (pd.pending || []).length || Object.keys(pex.arrastre || {}).length;
     if (!hasPrev) return false;
@@ -5340,7 +5619,7 @@
       if (c) c.hist = (c.hist || []).concat([{ d: pk, w: owner || "sin repartir" }]);
       if (!c) return null;
       if (!c.oid) c.oid = itemOid(it);
-      c.uid = newId() + "-0"; c.dias = (c.dias || 0) + 1; c.carriedFrom = pk;
+      c.uid = newId() + "-0"; c.dias = (c.dias || 0) + step; c.carriedFrom = pk;
       var ds = decaFrom(it);
       if (ds) { c.decaSince = ds; c.decaConf = decaConfFrom(it); if (!c.decaConf) delete c.decaConf; }
       else { delete c.decaSince; delete c.decaConf; }
@@ -5354,7 +5633,7 @@
         p.manana.concat(p.tarde).forEach(function (it) {
           if (it.uid) inResult[it.uid.split("-")[0]] = true;
           if (done(it.uid)) return;
-          var backToPool = (name === r.post && it.via === "post") || (name === r.tarde2 && it.via === "tarde");
+          var backToPool = ((name === r.post && it.via === "post") || (name === r.tarde2 && it.via === "tarde")) && !decaFrom(it); // en descalcificación se queda con quien la empezó
           if (backToPool) toPool.push({ it: it, owner: name }); else keep(name, it);
         });
       });
@@ -5375,7 +5654,7 @@
       if (!c) return;
       state.pending.push({
         esp: c.esp, tipo: c.tipo, media: c.media, qty: 1, complex: c.complex, urgent: c.urgent, neoplasica: c.neoplasica,
-        dias: c.dias + 1, nota: c.nota, assignTo: null, pid: newId(), carriedFrom: pk, decaSince: decaFrom(x.it) || "", decaConf: decaFrom(x.it) ? decaConfFrom(x.it) : "",
+        dias: c.dias + step, nota: c.nota, assignTo: null, pid: newId(), carriedFrom: pk, decaSince: decaFrom(x.it) || "", decaConf: decaFrom(x.it) ? decaConfFrom(x.it) : "",
         hist: (c.hist || []).concat([{ d: pk, w: x.owner || "sin repartir" }]),
         cli: c.cli || null, oid: c.oid || itemOid(x.it)
       });
@@ -5401,6 +5680,37 @@
     return true;
   }
   var carryNotice = "";
+  function dayHasData(k) {
+    var d = dayData(k), e = state.repartoExtra[k] || {};
+    return !!(d.result || (d.pending || []).length || Object.keys(e.arrastre || {}).some(function (n) { return (e.arrastre[n] || []).length; }));
+  }
+  function daysBackFrom(k, n) {
+    var out = [], dt = dateFromKey(k);
+    for (var i = 1; i <= n; i++) { dt.setDate(dt.getDate() - 1); out.push(dateKeyFromDate(dt)); }
+    return out;
+  }
+  function findCarrySource(k) {
+    var list = daysBackFrom(k, 14);
+    for (var i = 0; i < list.length; i++) if (dayHasData(list[i])) return list[i];
+    return "";
+  }
+  function workingDaysBetween(a, b) {
+    var n = 0, dt = dateFromKey(a);
+    while (true) { dt.setDate(dt.getDate() + 1); var kk = dateKeyFromDate(dt); if (kk > b) break; if (isWorkingKey(kk)) n++; }
+    return n;
+  }
+  // Con carpeta: si hoy aún no se ha traído lo pendiente, lee de la carpeta los repartos de los días
+  // anteriores (del más reciente hacia atrás, hasta 14 días) hasta encontrar uno con piezas.
+  function fsLoadCarrySource(k) {
+    if (!fsDir || k !== todayKey() || extraOf(k).carriedFrom) return Promise.resolve();
+    var list = daysBackFrom(k, 14), i = 0;
+    function next() {
+      if (i >= list.length) return Promise.resolve();
+      var day = list[i++];
+      return fsSyncReparto(day).then(function () { if (!dayHasData(day)) return next(); });
+    }
+    return next();
+  }
 
   function renderArrastre() {
     var box = document.getElementById("arrastre-box");
@@ -5414,17 +5724,18 @@
     names.forEach(function (n) {
       var list = e.arrastre[n].slice().sort(workCmp);
       var left = list.filter(function (it) { return !isMarked(state.selectedDay, it.uid); });
-      html += '<div class="arr-person"><h4>' + xmlEscape(n) + (n === state.me ? ' <span class="mine-tag">Tú</span>' : '') +
+      html += '<div class="arr-person"><h4>' + xmlEscape(av(n)) + (n === state.me ? ' <span class="mine-tag">Tú</span>' : '') +
         ' <span class="pl-meta" style="font-weight:400;">' + left.length + ' de ' + list.length + ' por incluir · ' + fmtMin(left.reduce(function (a, x) { return a + x.media; }, 0)) + '</span></h4><ul class="rc-items" style="padding:0;">';
       list.forEach(function (it) {
         var isDone = isMarked(state.selectedDay, it.uid), inDeca = isDeca(state.selectedDay, it.uid, it);
         html += '<li class="rc-item' + delayRowClass(it, umbral) + (isDone ? " rc-done" : "") + (inDeca && !isDone ? " rc-deca" : "") + '">' +
           '<div class="rc-item-top"><label class="done-check"><input type="checkbox" class="arr-done" data-uid="' + xmlEscape(it.uid) + '"' + (isDone ? " checked" : "") + '>' +
-          '<span class="rc-item-name">' + xmlEscape(it.tipo) + '</span></label><span class="num">' + fmtMin(it.media) + '</span></div>' +
+          '<span class="rc-item-name">' + (it.ref ? '<span class="ref-tag">' + xmlEscape(it.ref) + '</span> ' : '') + xmlEscape(it.tipo) + '</span></label><span class="num">' + fmtMin(it.media) + '</span></div>' +
           '<div><span class="pill-flag" style="margin-left:0;">Del ' + xmlEscape(shortDate(it.carriedFrom)) + '</span>' +
           (it.neoplasica ? '<span class="pill-neoplasica">Neoplásica</span>' : '') +
-          (inDeca ? '<span class="pill-deca">Descalcificación desde ' + xmlEscape(shortDate(decaSinceOf(state.selectedDay, it.uid, it))) + '</span>' : '') + diasEsperaHtml(it, umbral) + '</div>' +
-          '<label class="deca-check"><input type="checkbox" class="arr-deca" data-uid="' + xmlEscape(it.uid) + '"' + (inDeca ? " checked" : "") + '> En descalcificación</label>' +
+          (inDeca ? '<span class="pill-deca">Descalcificación desde ' + xmlEscape(shortDate(decaSinceOf(state.selectedDay, it.uid, it))) + '</span>' : '') +
+          (decaEndedToday(state.selectedDay, it) ? '<span class="pill-urgent">Sale de descalcificación: cuenta hoy ' + fmtMin(it.media) + '</span>' : '') + diasEsperaHtml(it, umbral) + '</div>' +
+          '<label class="deca-check"><input type="checkbox" class="arr-deca" data-uid="' + xmlEscape(it.uid) + '"' + (inDeca ? " checked" : "") + ' title="Mientras está en descalcificación cuenta 0 min; quita la marca el día que la talles y contará su tiempo"> En descalcificación</label>' +
           (it.nota ? '<div class="rc-item-personal-note">' + xmlEscape(it.nota) + '</div>' : '') + infoBlockHtml(state.selectedDay, it) + '</li>';
       });
       html += '</ul></div>';
@@ -5532,7 +5843,7 @@
     var onlyDeca = document.getElementById("pp-deca").checked, onlyLate = document.getElementById("pp-late").checked;
 
     // Resumen (de todo, sin filtros)
-    var sum = function (list) { return list.reduce(function (a, r) { return a + r.it.media * (r.pending ? (r.it.qty || 1) : 1); }, 0); };
+    var sum = function (list) { return list.reduce(function (a, r) { return a + (r.pending ? r.it.media * (r.it.qty || 1) : (r.deca ? 0 : r.it.media)); }, 0); };
     var count = function (list) { return list.reduce(function (a, r) { return a + (r.pending ? (r.it.qty || 1) : 1); }, 0); };
     var cards = [
       { l: "Por incluir", v: count(rows) + " piezas · " + fmtMin(sum(rows)) },
@@ -5557,9 +5868,9 @@
       if (it.neoplasica) estado.push('<span class="pill-neoplasica" style="margin-left:0;">Neoplásica</span>');
       if (r.deca) estado.push('<span class="pill-deca" style="margin-left:0;">Descalcificación desde ' + xmlEscape(shortDate(r.decaSince)) + '</span>');
       if (r.pending && !r.late) estado.push('<span class="pill-sinclasificar">Sin repartir</span>');
-      return '<tr><td class="tipo-name"><span class="prio-dot" style="background:' + PRIO_COLOR[r.cat] + '"></span>' + xmlEscape(it.tipo) + (r.pending && (it.qty || 1) > 1 ? ' ×' + it.qty : '') + '</td>' +
+      return '<tr><td class="tipo-name"><span class="prio-dot" style="background:' + PRIO_COLOR[r.cat] + '"></span>' + xmlEscape(it.tipo) + (r.pending && (it.qty || 1) > 1 ? ' ×' + it.qty : '') + (it.ref ? '<div class="ref-tag">' + xmlEscape(it.ref) + '</div>' : '') + '</td>' +
         '<td><span class="esp-tag">' + xmlEscape(it.esp) + '</span></td>' +
-        '<td>' + xmlEscape(r.who) + '</td>' +
+        '<td style="white-space:nowrap;">' + xmlEscape(av(r.who)) + '</td>' +
         '<td class="num">' + (it.dias ? it.dias + ' d' : 'nueva') + '</td>' +
         '<td>' + estado.join(" ") + '</td>' +
         '<td style="min-width:220px;">' + (r.pending && !pendingOid(it) ? (it.cli ? cliLineHtml(it.cli) : '') : infoBlockHtml(k, r.pending ? Object.assign({}, it, { oid: pendingOid(it) }) : it)) + '</td>' +
@@ -5648,6 +5959,387 @@
     }
   });
 
+
+  // =====================================================================================
+  // ---------- Planning compartido en la carpeta (planning.json) ----------
+  // Guardias de cada día (DÍA, POST, Tarde 2, autopsia, Out, festivo) y rotaciones del mes se guardan
+  // en la carpeta compartida. Se juntan día a día (y las rotaciones, por mes): gana el cambio más
+  // reciente. state.planMod[mes] = { days: { nº de día: {t, by} }, owners: {t, by} }.
+  if (!state.planMod || typeof state.planMod !== "object") state.planMod = {};
+  function planModOf(mk) {
+    var m = state.planMod[mk];
+    if (!m) m = state.planMod[mk] = { days: {}, owners: null };
+    if (!m.days) m.days = {};
+    return m;
+  }
+  function nextT(old) { return Math.max(Date.now(), ((old && +old.t) || 0) + 1); }
+  function planTouchDay(mk, dayNum) {
+    var pm = planModOf(mk);
+    pm.days[dayNum] = { t: nextT(pm.days[dayNum]), by: state.me || "" };
+    persist();
+    fsSchedulePlanning();
+  }
+  function planTouchOwners(mk) {
+    var pm = planModOf(mk);
+    pm.owners = { t: nextT(pm.owners), by: state.me || "" };
+    persist();
+    fsSchedulePlanning();
+  }
+  function planTouchMonth(mk) {
+    var pm = planModOf(mk), by = state.me || "";
+    (state.scheduleByMonth[mk] || []).forEach(function (d) { pm.days[d.day] = { t: nextT(pm.days[d.day]), by: by }; });
+    pm.owners = { t: nextT(pm.owners), by: by };
+    persist();
+    fsSchedulePlanning();
+  }
+  function cleanDayEntry(d, year, month0) {
+    var ok = function (n) { return RESIDENT_MASTER.indexOf(n) !== -1 ? n : ""; };
+    var e = {
+      day: d.day, weekday: WEEKDAY_NAMES[new Date(year, month0, d.day).getDay()],
+      dia: listify(d.dia).filter(ok).join(", "), post: ok(d.post || ""), tarde2: ok(d.tarde2 || ""),
+      out: listify(d.out).filter(ok).join(", "), weekend: !!d.weekend,
+      holiday: d.holiday ? noAngles(String(d.holiday)).slice(0, 40) : "",
+      necro: listify(d.necro).filter(ok).join(", ")
+    };
+    return e;
+  }
+  function stripEmpty(e) { var o = Object.assign({}, e); if (!o.holiday) delete o.holiday; if (!o.necro) delete o.necro; return o; }
+  // Mes local en el formato del archivo compartido (también se usa para comparar con el remoto).
+  function planRecord(mk) {
+    var m = MONTHS.filter(function (x) { return x.key === mk; })[0];
+    if (!m) return null;
+    var pm = planModOf(mk);
+    var owners = {};
+    Object.keys(state.ownersByMonth[mk] || {}).sort().forEach(function (esp) { owners[esp] = state.ownersByMonth[mk][esp]; });
+    return {
+      key: mk, label: m.label, year: m.year, month: m.month,
+      owners: owners, necroRotation: state.necroRotationByMonth[mk] || "",
+      ownersMod: pm.owners ? { t: +pm.owners.t || 0, by: pm.owners.by || "" } : { t: 0, by: "" },
+      schedule: (state.scheduleByMonth[mk] || []).map(function (d) {
+        var e = cleanDayEntry(d, m.year, m.month), md = pm.days[d.day];
+        e.m = md ? +md.t || 0 : 0; e.mby = md ? md.by || "" : "";
+        return e;
+      })
+    };
+  }
+  function cleanRemoteRecord(rec) {
+    if (!rec || !/^\d{4}-\d{2}$/.test(rec.key || "") || !Array.isArray(rec.schedule)) return null;
+    var year = +rec.key.slice(0, 4), month0 = +rec.key.slice(5, 7) - 1;
+    var owners = {};
+    Object.keys(rec.owners || {}).sort().forEach(function (esp) {
+      if (ESPECIALIDADES.indexOf(esp) === -1) return;
+      var ok = ownerEntries(rec.owners, esp).filter(function (e) { return allowedName(e.name); }).map(formatOwnerEntry);
+      if (ok.length) owners[esp] = ok.join(", ");
+    });
+    var om = rec.ownersMod || {};
+    return {
+      key: rec.key, label: MONTH_NAMES[month0] + " " + year, year: year, month: month0,
+      owners: owners, necroRotation: allowedName(rec.necroRotation || ""),
+      ownersMod: { t: +om.t || 0, by: allowedName(om.by) },
+      schedule: rec.schedule.filter(function (d) { return d && typeof d.day === "number" && d.day >= 1 && d.day <= 31; }).map(function (d) {
+        var e = cleanDayEntry(d, year, month0);
+        e.m = +d.m || 0; e.mby = allowedName(d.mby);
+        return e;
+      })
+    };
+  }
+  function fsSyncPlanning() {
+    if (!fsDir) return Promise.resolve(false);
+    return fsReadName("planning.json", "reparto-inclusion-planning").then(function (remote) {
+      var changed = false;
+      var remoteRecs = remote && Array.isArray(remote.months) ? remote.months.map(cleanRemoteRecord).filter(Boolean) : [];
+      remoteRecs.forEach(function (rr) {
+        var known = MONTHS.some(function (m) { return m.key === rr.key; });
+        var pm = planModOf(rr.key);
+        if (!known) {
+          var entry = { key: rr.key, year: rr.year, month: rr.month, label: rr.label, defaultOwners: rr.owners,
+            defaultNecroRotation: rr.necroRotation, defaultSchedule: rr.schedule.map(function (e) { var o = stripEmpty(e); delete o.m; delete o.mby; return o; }) };
+          registerMonthEntry(entry);
+          upsertExtraMonth(entry);
+          state.scheduleByMonth[rr.key] = cloneJson(entry.defaultSchedule);
+          state.ownersByMonth[rr.key] = Object.assign({}, rr.owners);
+          state.necroRotationByMonth[rr.key] = rr.necroRotation;
+          rr.schedule.forEach(function (e) { if (e.m) pm.days[e.day] = { t: e.m, by: e.mby }; });
+          if (rr.ownersMod.t) pm.owners = { t: rr.ownersMod.t, by: rr.ownersMod.by };
+          changed = true;
+          return;
+        }
+        var list = state.scheduleByMonth[rr.key] = state.scheduleByMonth[rr.key] || [];
+        rr.schedule.forEach(function (e) {
+          var lm = pm.days[e.day] ? +pm.days[e.day].t || 0 : 0;
+          if (e.m <= lm) return;
+          var ld = list.filter(function (x) { return x.day === e.day; })[0];
+          if (!ld) { ld = { day: e.day }; list.push(ld); list.sort(function (a, b) { return a.day - b.day; }); }
+          ["weekday", "dia", "post", "tarde2", "out", "weekend"].forEach(function (f) { ld[f] = e[f]; });
+          if (e.holiday) ld.holiday = e.holiday; else delete ld.holiday;
+          if (e.necro) ld.necro = e.necro; else delete ld.necro;
+          delete state.necroByDay[dateKeyFor(rr.key, e.day)];
+          pm.days[e.day] = { t: e.m, by: e.mby };
+          changed = true;
+        });
+        var lo = pm.owners ? +pm.owners.t || 0 : 0;
+        if (rr.ownersMod.t > lo) {
+          state.ownersByMonth[rr.key] = Object.assign({}, rr.owners);
+          state.necroRotationByMonth[rr.key] = rr.necroRotation;
+          pm.owners = { t: rr.ownersMod.t, by: rr.ownersMod.by };
+          changed = true;
+        }
+      });
+      if (changed) { persist(); refreshAfterPlanningChange(); renderResults(); }
+      var local = MONTHS.map(function (m) { return planRecord(m.key); }).filter(Boolean);
+      var norm = function (recs) { return JSON.stringify(recs.slice().sort(function (a, b) { return a.key < b.key ? -1 : 1; })); };
+      if (remote && norm(local) === norm(remoteRecs)) return changed;
+      return fsWriteName("planning.json", { app: "reparto-inclusion-planning", version: 1, savedAt: new Date().toISOString(), months: local })
+        .then(function () { return changed; });
+    }).then(function (c) { renderPlanShare(); return c; });
+  }
+  var planTimer = null;
+  function fsSchedulePlanning() {
+    renderPlanShare();
+    if (!fsDir) return;
+    clearTimeout(planTimer);
+    planTimer = setTimeout(function () { fsSyncPlanning().then(function () { fsAfterSync(false); }).catch(fsFail); }, 300);
+  }
+  function renderPlanShare() {
+    var el = document.getElementById("plan-share");
+    if (!el) return;
+    document.getElementById("plan-title").textContent = monthEntryForKey(state.selectedMonth).label;
+    var pm = state.planMod[state.selectedMonth] || { days: {} }, last = null;
+    Object.keys(pm.days || {}).forEach(function (d) { if (!last || pm.days[d].t > last.t) last = pm.days[d]; });
+    if (pm.owners && (!last || pm.owners.t > last.t)) last = pm.owners;
+    var who = last && last.t ? " · Último cambio: " + xmlEscape(last.by || "sin nombre") + " el " + fmtWhen(last.t) : "";
+    if (fsDir) { el.className = "planning-status ok"; el.innerHTML = "Planning compartido en la carpeta del servicio" + who + "."; }
+    else { el.className = "planning-status warn"; el.innerHTML = "Sin carpeta compartida conectada (pestaña DÍA): los cambios del planning solo se guardan en este navegador."; }
+  }
+  document.getElementById("settings-month-select").addEventListener("change", renderPlanShare);
+  renderPlanShare();
+  function fmtWhen(t) { var d = new Date(t); return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + " a las " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+
+
+  // =====================================================================================
+  // ---------- Animales de cada residente y preferencias de horario (compartidas: preferencias.json) ----------
+  var DEFAULT_ANIMALS = { "Raquel": "🦊", "Clement": "🐼", "Altuna": "🐙", "Juan": "🐻", "Sílvia": "🦉", "Núria": "🐢", "Dani": "🦁", "Kasia": "🐱", "Xandre": "🐺", "Lee": "🐧", "Martín": "🦔" };
+  var ANIMAL_CHOICES = ["🦊", "🐼", "🐙", "🐻", "🦉", "🐢", "🦁", "🐱", "🐺", "🐧", "🦔", "🐨", "🐯", "🐸", "🐰", "🦄", "🐝", "🦋", "🐬", "🦒", "🐘", "🦩", "🐿️", "🦦", "🐳", "🦜", "🐞", "🦖"];
+  var FRANJAS = [
+    { id: "9-11", a: 9 * 60, b: 11 * 60, label: "9–11" },
+    { id: "11-13", a: 11 * 60, b: 13 * 60, label: "11–13" },
+    { id: "13-16", a: 13 * 60, b: 16 * 60, label: "13–16" }
+  ]; // solo mañana: por la tarde cada campana es de POST y de Tarde 2
+  if (!state.prefs || typeof state.prefs !== "object") state.prefs = {};
+  function prefOf(name) { return state.prefs[name] || { f: [], a: "", t: 0 }; }
+  function animalOf(name) { var p = state.prefs[name]; return (p && p.a) || DEFAULT_ANIMALS[name] || "🙂"; }
+  function av(name) { return name && RESIDENT_MASTER.indexOf(name) !== -1 ? animalOf(name) + " " + name : name; }
+  function setPref(name, patch) {
+    var old = prefOf(name);
+    state.prefs[name] = Object.assign({ f: old.f || [], a: old.a || "" }, patch, { t: Math.max(Date.now(), (old.t || 0) + 1), by: state.me || "" });
+    persist();
+    renderPrefs(); renderMeBar(); renderResults(); renderOrgGrid(); renderOrgAssigned();
+    fsSchedulePrefs();
+  }
+  function cleanPrefs(obj) {
+    var out = {};
+    Object.keys(obj || {}).forEach(function (n) {
+      if (RESIDENT_MASTER.indexOf(n) === -1) return;
+      var p = obj[n] || {};
+      out[n] = { f: (p.f || []).filter(function (id) { return FRANJAS.some(function (fr) { return fr.id === id; }); }),
+        a: ANIMAL_CHOICES.indexOf(p.a) !== -1 ? p.a : "", t: +p.t || 0, by: allowedName(p.by) };
+    });
+    return out;
+  }
+  function fsSyncPrefs() {
+    if (!fsDir) return Promise.resolve(false);
+    return fsReadName("preferencias.json", "reparto-inclusion-preferencias").then(function (remote) {
+      var rp = cleanPrefs(remote && remote.prefs), changed = false, needWrite = !remote;
+      Object.keys(rp).forEach(function (n) {
+        if (!state.prefs[n] || rp[n].t > (state.prefs[n].t || 0)) { state.prefs[n] = rp[n]; changed = true; }
+      });
+      Object.keys(state.prefs).forEach(function (n) { if (!rp[n] || (state.prefs[n].t || 0) > rp[n].t) needWrite = true; });
+      if (changed) { persist(); renderPrefs(); renderMeBar(); renderResults(); }
+      if (!needWrite) return changed;
+      return fsWriteName("preferencias.json", { app: "reparto-inclusion-preferencias", version: 1, prefs: cleanPrefs(state.prefs) }).then(function () { return changed; });
+    });
+  }
+  var prefsTimer = null;
+  function fsSchedulePrefs() {
+    if (!fsDir) return;
+    clearTimeout(prefsTimer);
+    prefsTimer = setTimeout(function () { fsSyncPrefs().catch(fsFail); }, 300);
+  }
+  function renderPrefs() {
+    var tb = document.getElementById("pref-tbody");
+    if (!tb) return;
+    tb.innerHTML = "";
+    var names = RESIDENT_MASTER.slice();
+    if (state.me) { names.splice(names.indexOf(state.me), 1); names.unshift(state.me); }
+    names.forEach(function (n) {
+      var p = prefOf(n), tr = document.createElement("tr");
+      if (n === state.me) tr.className = "pref-me";
+      tr.innerHTML = '<td class="pref-name">' + xmlEscape(av(n)) + '</td>' +
+        FRANJAS.map(function (fr) {
+          return '<td style="text-align:center;"><input type="checkbox" class="pref-f" data-n="' + xmlEscape(n) + '" data-f="' + fr.id + '"' + ((p.f || []).indexOf(fr.id) !== -1 ? " checked" : "") + '></td>';
+        }).join("");
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll("input.pref-f").forEach(function (c) {
+      c.addEventListener("change", function () {
+        var f = (prefOf(c.dataset.n).f || []).filter(function (x) { return x !== c.dataset.f; });
+        if (c.checked) f.push(c.dataset.f);
+        setPref(c.dataset.n, { f: f });
+      });
+    });
+  }
+
+  // ---------- Reservas de campanas en la carpeta compartida (campanas_AAAA-MM-DD.json) ----------
+  function campFile(fecha) { return "campanas_" + fecha + ".json"; }
+  function cleanBooking(r) {
+    return { id: String(r.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 40), fecha: String(r.fecha || ""), campana: +r.campana, inicio: +r.inicio, fin: +r.fin,
+      nombre: allowedName(r.nombre) || noAngles(String(r.nombre || "")).slice(0, 40), motivo: noAngles(String(r.motivo || "")).slice(0, 60), nota: noAngles(String(r.nota || "")).slice(0, 200) };
+  }
+  function folderList(fecha) {
+    return fsReadName(campFile(fecha), "reparto-inclusion-campanas").then(function (d) {
+      var del = d && Array.isArray(d.borradas) ? d.borradas : [];
+      return { reservas: (d && Array.isArray(d.reservas) ? d.reservas : []).map(cleanBooking).filter(function (r) { return r.id && del.indexOf(r.id) === -1; }), borradas: del };
+    });
+  }
+  function folderPost(body) {
+    return folderList(body.fecha).then(function (d) {
+      var list = d.reservas, del = d.borradas;
+      if (body.action === "add") {
+        var clash = list.filter(function (r) { return r.campana === body.campana && body.inicio < r.fin && body.fin > r.inicio; })[0];
+        if (clash) return { ok: false, error: "ocupado", con: clash };
+        var id = newId();
+        list.push(cleanBooking({ id: id, fecha: body.fecha, campana: body.campana, inicio: body.inicio, fin: body.fin, nombre: body.nombre, motivo: body.motivo, nota: body.nota }));
+        return fsWriteName(campFile(body.fecha), { app: "reparto-inclusion-campanas", version: 1, fecha: body.fecha, reservas: list, borradas: del }).then(function () { return { ok: true, id: id }; });
+      }
+      if (body.action === "delete") {
+        if (del.indexOf(body.id) === -1) del.push(body.id);
+        list = list.filter(function (r) { return r.id !== body.id; });
+        return fsWriteName(campFile(body.fecha), { app: "reparto-inclusion-campanas", version: 1, fecha: body.fecha, reservas: list, borradas: del }).then(function () { return { ok: true }; });
+      }
+      return { ok: false, error: "accion" };
+    });
+  }
+
+  // ---------- Reserva automática según el reparto ----------
+  // Cada residente recibe el tiempo de sus piezas de mañana (9–16h) y de tarde (16–20h), redondeado
+  // a medias horas, en un solo bloque si cabe (misma campana, lo más agrupado posible) y en sus
+  // franjas preferidas. Si no cabe seguido, se divide en bloques; nunca dos bloques seguidos en
+  // campanas distintas (no tiene que cambiarse de campana a media inclusión) ni dos a la vez.
+  var AUTO_NOTE = "Reserva automática";
+  function prefMinutes(name, s, e) {
+    var f = prefOf(name).f || [], m = 0;
+    FRANJAS.forEach(function (fr) { if (f.indexOf(fr.id) !== -1) m += Math.max(0, Math.min(e, fr.b) - Math.max(s, fr.a)); });
+    return m;
+  }
+  function planAutoBookings(fecha, existing) {
+    var r = dayData(fecha).result;
+    if (!r) return { error: "Todavía no hay reparto calculado para este día (pestaña POST)." };
+    var keep = existing.filter(function (b) { return b.nota !== AUTO_NOTE; }); // las reservas a mano se respetan
+    var booked = keep.map(function (b) { return { campana: b.campana, inicio: b.inicio, fin: b.fin, nombre: b.nombre }; });
+    var periods = [{ key: "manana", a: ORG_START, b: ORG_MORNING_END, label: "mañana" }];
+    var needs = [];
+    var needNames = Object.keys(r.people);
+    Object.keys((state.repartoExtra[fecha] || {}).arrastre || {}).forEach(function (n) { if (needNames.indexOf(n) === -1 && arrTallarMin(fecha, n)) needNames.push(n); });
+    needNames.forEach(function (n) {
+      if (!r.people[n]) r = Object.assign({}, r, { people: Object.assign({}, r.people, (function () { var o = {}; o[n] = { manana: [], tarde: [] }; return o; })()) });
+      periods.forEach(function (pr) {
+        var mins = r.people[n][pr.key].filter(function (it) { return !isMarked(fecha, it.uid); }).reduce(function (a, it) { return a + wMin(fecha, it); }, 0) +
+          (pr.key === "manana" ? arrTallarMin(fecha, n) : 0);
+        // lo que ya tenga reservado a mano en esa franja para sus piezas cuenta como hecho
+        var own = keep.filter(function (b) { return b.nombre === n && b.motivo === "Piezas asignadas en el reparto" && b.inicio < pr.b && b.fin > pr.a; })
+          .reduce(function (a, b) { return a + Math.min(b.fin, pr.b) - Math.max(b.inicio, pr.a); }, 0);
+        var need = Math.ceil(Math.max(0, mins - own) / ORG_SLOT) * ORG_SLOT;
+        if (need > 0) needs.push({ n: n, pr: pr, need: need });
+      });
+    });
+    // primero los bloques más largos y quien tiene menos franjas preferidas (menos margen)
+    needs.sort(function (x, y) { return y.need - x.need || (prefOf(x.n).f || []).length - (prefOf(y.n).f || []).length; });
+    function freeAt(c, s, e) { return !booked.some(function (b) { return b.campana === c && s < b.fin && e > b.inicio; }); }
+    function personOk(n, c, s, e) {
+      return !booked.some(function (b) {
+        if (b.nombre !== n) return false;
+        if (s < b.fin && e > b.inicio) return true;                      // no puede estar en dos sitios a la vez
+        if (b.campana !== c && (b.fin === s || b.inicio === e)) return true; // ni cambiar de campana sin pausa
+        return false;
+      });
+    }
+    var made = [], warnings = [];
+    needs.forEach(function (x) {
+      var left = x.need, blocks = 0;
+      while (left > 0) {
+        var best = null;
+        ORG_CAMPANAS.forEach(function (c) {
+          for (var s = x.pr.a; s < x.pr.b; s += ORG_SLOT) {
+            // el bloque más largo posible desde s (hasta lo que falta)
+            var e = s;
+            while (e < x.pr.b && e - s < left && freeAt(c, e, e + ORG_SLOT)) e += ORG_SLOT;
+            if (e === s || !personOk(x.n, c, s, e)) continue;
+            var len = e - s;
+            // puntuación: cubrir todo de una vez > minutos en sus franjas > pegado a otra reserva suya en la misma campana > más temprano
+            var adj = booked.some(function (b) { return b.nombre === x.n && b.campana === c && (b.fin === s || b.inicio === e); }) ? 1 : 0;
+            var score = (len >= left ? 1e7 : len * 1e4) + prefMinutes(x.n, s, e) * 10 + adj * 5 - s / 1000;
+            if (!best || score > best.score) best = { c: c, s: s, e: e, score: score };
+          }
+        });
+        if (!best) { warnings.push(av(x.n) + ": no caben " + fmtMin(left) + " de la " + x.pr.label + " en las campanas."); break; }
+        var b = { campana: best.c, inicio: best.s, fin: best.e, nombre: x.n };
+        booked.push(b); made.push(b); left -= best.e - best.s; blocks++;
+      }
+      if (blocks > 1) warnings.push(av(x.n) + ": su " + x.pr.label + " no cabía seguida y va en " + blocks + " bloques.");
+      if (x.pr.key === "manana" && (prefOf(x.n).f || []).length && made.filter(function (m) { return m.nombre === x.n && m.inicio < ORG_MORNING_END; }).every(function (m) { return !prefMinutes(x.n, m.inicio, m.fin); })) {
+        warnings.push(av(x.n) + ": no ha sido posible en sus franjas preferidas por la mañana.");
+      }
+    });
+    // Tarde: una campana para cada uno, toda la tarde (Campana 1 = POST, Campana 2 = Tarde 2).
+    var day = scheduleEntryForKey(fecha) || {};
+    var postName = day.post || r.post, t2Name = day.tarde2 || r.tarde2;
+    [[postName, 1, "POST"], [t2Name, 2, "Tarde 2"]].forEach(function (x) {
+      if (!x[0]) return;
+      if (x[0] === postName && x[1] === 2 && postName === t2Name) return;
+      if (!freeAt(x[1], ORG_MORNING_END, ORG_END)) { warnings.push("La Campana " + x[1] + " de la tarde (" + x[2] + ") ya tiene una reserva a mano: no la he tocado."); return; }
+      var b = { campana: x[1], inicio: ORG_MORNING_END, fin: ORG_END, nombre: x[0], motivo: "Tarde de " + x[2] };
+      booked.push(b); made.push(b);
+    });
+    Object.keys(r.people).forEach(function (n) {
+      if (n === postName || n === t2Name) return;
+      var t = r.people[n].tarde.filter(function (it) { return !isMarked(fecha, it.uid); }).reduce(function (a, it) { return a + wMin(fecha, it); }, 0);
+      if (t) warnings.push(av(n) + " tiene " + fmtMin(t) + " de piezas de tarde, pero por la tarde las campanas son de POST y Tarde 2: pásaselas a ellos o a su mañana.");
+    });
+    var toDelete = existing.filter(function (b) { return b.nota === AUTO_NOTE; });
+    return { made: made, toDelete: toDelete, warnings: warnings };
+  }
+  function runAutoBookings() {
+    var fecha = orgDateEl.value || todayKey();
+    var st = document.getElementById("org-auto-status");
+    st.className = "planning-status warn"; st.textContent = "Calculando…";
+    apiList(fecha).then(function (list) {
+      var existing = list.map(cleanBooking);
+      var plan = planAutoBookings(fecha, existing);
+      if (plan.error) { st.className = "planning-status err"; st.textContent = plan.error; return; }
+      var chain = Promise.resolve();
+      plan.toDelete.forEach(function (b) { chain = chain.then(function () { return apiPost({ action: "delete", fecha: fecha, id: b.id }); }); });
+      var fails = 0;
+      plan.made.forEach(function (b) {
+        chain = chain.then(function () {
+          return apiPost({ action: "add", fecha: fecha, campana: b.campana, inicio: b.inicio, fin: b.fin, nombre: b.nombre, motivo: b.motivo || "Piezas asignadas en el reparto", nota: AUTO_NOTE })
+            .then(function (res) { if (!res || !res.ok) fails++; });
+        });
+      });
+      return chain.then(function () {
+        var lines = plan.made.slice().sort(function (a, b) { return a.inicio - b.inicio || a.campana - b.campana; }).map(function (b) {
+          return av(b.nombre) + " · Campana " + b.campana + " · " + hhmm(b.inicio) + "–" + hhmm(b.fin);
+        });
+        st.className = "planning-status " + (plan.warnings.length || fails ? "warn" : "ok");
+        st.innerHTML = (plan.made.length ? "<b>Reservado:</b><ul>" + lines.map(function (l) { return "<li>" + xmlEscape(l) + "</li>"; }).join("") + "</ul>" : "No hay tiempo de inclusión que reservar.") +
+          (plan.warnings.length ? "<b>Avisos:</b><ul>" + plan.warnings.map(function (w) { return "<li>" + xmlEscape(w) + "</li>"; }).join("") + "</ul>" : "") +
+          (fails ? "<br>" + fails + " reserva(s) no se han podido guardar (alguien acababa de reservar ese hueco): vuelve a pulsar." : "");
+        return loadBookings();
+      });
+    }).catch(function () { st.className = "planning-status err"; st.textContent = "No se han podido leer o guardar las reservas."; });
+  }
+  document.getElementById("org-auto-btn").addEventListener("click", runAutoBookings);
+  renderPrefs();
+
   var repartoTimers = {};
   function fsScheduleReparto(k) {
     if (!fsDir || !k) return;
@@ -5693,14 +6385,35 @@
       var hint = "";
       if (info.roles.indexOf("De día") !== -1) hint = "Estás de día: apunta en la pestaña «DÍA» las piezas previstas de quirófano.";
       else if (info.roles.indexOf("POST") !== -1) hint = "Estás de POST: en la pestaña «POST» marca las previstas que han llegado y calcula el reparto.";
-      bar.innerHTML = '<span>Eres <b>' + xmlEscape(state.me) + '</b></span> <button id="me-change">cambiar</button>' +
+      bar.innerHTML = '<span class="me-user"><button id="me-animal" class="me-animal" title="Elegir tu animal">' + animalOf(state.me) + '</button>' +
+        '<span>Eres <b>' + xmlEscape(state.me) + '</b></span></span> <button id="me-change">cambiar</button>' +
         '<span>· Hoy, ' + xmlEscape(longDate(tk)) + ':</span> ' + rolesHtml + (hint ? '<span class="me-hint">' + hint + '</span>' : '');
     }
     document.getElementById("me-change").addEventListener("click", openMeModal);
+    var ab = document.getElementById("me-animal");
+    if (ab) ab.addEventListener("click", function (ev) { ev.stopPropagation(); toggleAnimalPicker(); });
   }
+  // Selector del animal de cada uno (como la foto de un usuario), junto a su nombre.
+  function toggleAnimalPicker() {
+    var pk = document.getElementById("animal-picker");
+    if (pk) { pk.remove(); return; }
+    pk = document.createElement("div");
+    pk.id = "animal-picker"; pk.className = "animal-picker";
+    pk.innerHTML = '<div class="ap-title">Elige tu animal</div>' + ANIMAL_CHOICES.map(function (a) {
+      return '<button class="ap-opt' + (a === animalOf(state.me) ? " sel" : "") + '" data-a="' + a + '">' + a + '</button>';
+    }).join("");
+    document.getElementById("me-bar").appendChild(pk);
+    pk.querySelectorAll("button.ap-opt").forEach(function (b) {
+      b.addEventListener("click", function (ev) { ev.stopPropagation(); pk.remove(); setPref(state.me, { a: b.dataset.a }); });
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var pk = document.getElementById("animal-picker");
+    if (pk && !pk.contains(e.target)) pk.remove();
+  });
   var meModal = document.getElementById("me-modal");
   var meSelect = document.getElementById("me-select");
-  meSelect.innerHTML = '<option value="">— elige tu nombre —</option>' + RESIDENT_MASTER.map(function (n) { return '<option value="' + xmlEscape(n) + '">' + xmlEscape(n) + '</option>'; }).join("");
+  meSelect.innerHTML = '<option value="">— elige tu nombre —</option>' + RESIDENT_MASTER.map(function (n) { return '<option value="' + xmlEscape(n) + '">' + xmlEscape(av(n)) + '</option>'; }).join("");
   function openMeModal() {
     meSelect.value = state.me || "";
     meModal.hidden = false;
@@ -5732,6 +6445,7 @@
     renderDayStrip();
     renderNecroChecklist();
   })();
+  extrasReady = true;
   ensureRepartoDay();
   renderPending();
   renderResults();
