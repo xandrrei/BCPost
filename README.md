@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/34966506/README.md)
+[README.md](https://github.com/user-attachments/files/34971641/README.md)
 # Reparto de Inclusión
 
 Herramienta web para repartir cada día la inclusión de piezas quirúrgicas entre los residentes de Anatomía Patológica, según el tiempo estimado de cada tipo de pieza, el planning de guardias y las rotaciones del mes.
@@ -26,6 +26,9 @@ Es una sola página (`index.html`), sin servidor ni instalación: se abre en el 
 | Rojo | Más de 3 días de espera, o pieza urgente con 1 o más días de espera (manda sobre los demás colores) |
 | Morado | Urgente y nueva (0 días de espera): marcada como urgente, protocolo linfoma (HEM) o neuro (NR) |
 
+## Nº de biopsia
+Cada pieza lleva su número de biopsia con formato **B00-000000** (sin siglas del paciente). Se escribe al añadir la pieza, en la lista de piezas pendientes de repartir o en la tarjeta del residente. Vale escribirlo abreviado («b26 1234» se convierte en «B26-001234»), y si el formato no es válido, el campo se marca en rojo. Sale en las tarjetas, en «Piezas por incluir», en la imagen PNG y en la columna «Ref Biopsia» del Excel.
+
 ## Información clínica de cada pieza
 - Cuando POST pasa una pieza prevista al reparto, la pieza lleva su ficha de DÍA **sin el nombre del paciente**: edad, sexo, neoadyuvancia, posible intraoperatoria, localización y otros datos. El nombre solo está en la pestaña DÍA, para reconocer la pieza cuando llega.
 - La ficha se ve en la tarjeta de cada residente, en «Pendientes de días anteriores» y en «Piezas por incluir».
@@ -37,6 +40,8 @@ En la tarjeta de cada residente (mañana y tarde por separado), en «Pendientes 
 
 ## En descalcificación
 Cada pieza del reparto (y de «Pendientes de días anteriores») tiene una casilla **«En descalcificación»**, compartida por todos. Las piezas marcadas salen con borde discontinuo y en el recuadro **«En descalcificación»**, con su residente y la fecha desde la que están. La marca pasa con la pieza al día siguiente hasta que se marque como incluida o se desmarque.
+
+**Horas de las piezas en descalcificación:** mientras una pieza está en descalcificación **cuenta 0 minutos** en el reparto, en los totales y en las campanas (se ve como «0 min (45 min al tallar)»), y **se queda con el residente que la empezó**, aunque fuera de POST o Tarde 2. El día que se talla, se quita la marca y la pieza vuelve a contar su tiempo entero ese día: si ya es de días anteriores, cuenta en la mañana de su residente y en su reserva de campana («Sale de descalcificación: cuenta hoy»).
 
 ## Carteles de advertencia
 Arriba, en todas las pestañas, para la fecha elegida en «POST»:
@@ -63,6 +68,10 @@ Quien está de día apunta las piezas que espera de quirófano (nombre sin apell
 
 **Carpeta compartida del servicio (Edge o Chrome):** en «DÍA», «Conectar carpeta» y elegir una subcarpeta de la unidad de red (p. ej. `Y:\AP\Reparto`). Cada día de recepción se guarda como `de_dia_AAAA-MM-DD.json` en esa carpeta, y al día siguiente «POST» lo lee desde cualquier ordenador con la carpeta conectada. Si dos ordenadores apuntan el mismo día, las piezas se juntan; las borradas no reaparecen. Los archivos de más de 14 días se borran solos. El permiso se recuerda por navegador; si lo vuelve a pedir, «Reconectar carpeta». No funciona dentro de claude.ai. Sin carpeta, sigue estando «Guardar copia» / «Cargar copia».
 
+### Previstas que no llegan el día previsto
+- **En DÍA**, el recuadro **«Sin llegar de días anteriores»** muestra las previstas de días anteriores (hasta 14 días) que nadie ha marcado como llegadas, con toda su ficha. «Pasar a mi lista» las copia a las previstas de hoy («Rescatada del 23/10»), para que las vea POST del siguiente día laborable. «No llegará» las quita.
+- **En POST**, el desplegable **«Previstas de días anteriores sin llegar»** permite añadir al reparto una prevista atrasada que llega ese día por sorpresa. Entra como pieza nueva, con la etiqueta «Llegó con retraso · prevista el 23/10».
+
 ### POST (reparto del día)
 1. Elige mes y fecha. POST, Tarde 2, Día y Out salen del planning y se pueden cambiar en el momento.
 2. Marca quién tiene autopsia hoy.
@@ -80,23 +89,33 @@ Quien está de día apunta las piezas que espera de quirófano (nombre sin apell
 - Las piezas técnicas solo se reparten entre POST y Tarde 2.
 - Capacidad: 2 estaciones; mañana 8–16 h (6 h 30 útiles tras comida y sesión) y tarde 16–20 h.
 
-### Organización de inclusión
-Reserva de campanas (Campana 1 y 2, de 8 a 16 h, en franjas de 30 min). Muestra lo que cada residente tiene asignado por la mañana para reservar ese tiempo.
+### Organización de inclusión (campanas)
+- Campanas 1 y 2, de **9 a 20h**, por medias horas: mañana 9–16h y tarde 16–20h.
+- **Reserva automática** («Reservar campanas según el reparto»): por la mañana, a cada residente le reserva el tiempo de sus piezas de ese día que aún no ha incluido, redondeado a medias horas; por la tarde, la Campana 1 a POST y la 2 a Tarde 2:
+  - por la mañana, en **un solo bloque** si cabe, en la **misma campana** y en sus **franjas preferidas**;
+  - si no cabe seguido, lo divide en bloques, pero nunca dos bloques seguidos en campanas distintas (no tiene que cambiarse de campana a media inclusión) ni dos a la vez;
+  - respeta las reservas hechas a mano; si se vuelve a pulsar, rehace solo las automáticas (las que llevan la nota «Reserva automática»).
+- **Tarde (16–20h):** la Campana 1 es para POST y la Campana 2 para Tarde 2, toda la tarde. Por eso, en el reparto, quien ayuda con «el resto» sin ser POST ni Tarde 2 (p. ej. la rotación de NECRO) incluye sus piezas por la mañana.
+- **Preferencias de horario:** solo de la mañana, con las franjas 9–11, 11–13 y 13–16 para cada residente. Sin marcar = sin preferencia (lo más temprano posible).
+- Con la carpeta compartida, las reservas (`campanas_AAAA-MM-DD.json`) y las preferencias (`preferencias.json`) se comparten entre todos. Sigue existiendo la opción de la hoja de Google.
 
-- **Modo local** (por defecto): las reservas solo se ven en ese ordenador.
-- **Compartido:** se guardan en una hoja de Google mediante Apps Script. Los pasos están en la propia pestaña («Configurar reservas compartidas»), con un botón para descargar el script.
+## Animal de cada residente
+Arriba, junto a tu nombre, está tu animal; pulsándolo eliges otro. Sale en tu tarjeta del reparto, en las campanas y en las listas, y se comparte con todos.
 
-## Ajustes (dentro de la pestaña POST)
-- **Rotaciones del mes:** quién está en cada especialidad. Admite varias personas, días concretos (p. ej. «16-30») y «repite».
-- **Rotación de NECRO** del mes.
+## Ajustes (dentro de la pestaña POST: retrasos y correos)
 - **Umbral de retraso** en días.
 - **Correos** de los residentes, para «Enviar por correo» (se guardan solo en ese navegador).
-- **Planning del mes**, editable día a día.
+- El planning y las rotaciones están en la pestaña «Planning».
 
-## Cargar el planning de un mes nuevo
-1. En Ajustes, **«1 · Importar planning»**: el PDF o el Excel del planning de siempre (fila «Mes» y columnas DÍA · POST · TARDE 2 · N. ADULTO · N. FETAL · Out; valen nombres o iniciales). Si no tienes el Excel, descarga la **plantilla** y rellénala.
-2. Revisa las rotaciones y los avisos que salgan.
-3. Pulsa **«3 · Descargar planning.json»** y súbelo a este repositorio, **en la misma carpeta que `index.html`**, sustituyendo el anterior. Al abrir la página, todo el mundo recibe el planning nuevo sin tocar el HTML.
+## Pestaña «Planning»
+- **Guardias del mes**, editables en la propia app: DÍA, POST, Tarde 2, autopsia (hasta dos personas), Out y festivo. Sirve para los cambios puntuales, sin volver a importar el PDF. Los cambios de última hora hechos en la pestaña POST (tarjeta «Día a repartir» y «Autopsia hoy») cambian lo mismo.
+- **Rotaciones del mes** y rotación de NECRO.
+- Con la carpeta compartida conectada, el planning se guarda en ella (`planning.json`) y lo ven todos en un minuto. **No hace falta subir nada a GitHub.** Se junta día a día: si dos personas cambian días distintos a la vez, se guardan los dos cambios. Cada día cambiado indica quién lo cambió y cuándo.
+
+### Importar el planning de un mes nuevo
+1. En la pestaña Planning, «Importar el planning de un mes nuevo»: el PDF o el Excel del planning de siempre (fila «Mes» y columnas DÍA · POST · TARDE 2 · N. ADULTO · N. FETAL · Out; valen nombres o iniciales). Si no tienes el Excel, descarga la **plantilla** y rellénala.
+2. Revisa las guardias, las rotaciones y los avisos que salgan. Ya está: se guarda en la carpeta y lo ven todos.
+- «Descargar copia (planning.json)» queda como copia de seguridad. Si algún día no hubiera carpeta compartida, ese archivo subido a GitHub junto al HTML también reparte el planning a todos.
 
 ## Publicar en GitHub Pages
 1. Sube `index.html` (y `planning.json` cuando lo tengas) a la raíz del repositorio.
@@ -107,10 +126,12 @@ Reserva de campanas (Campana 1 y 2, de 8 a 16 h, en franjas de 30 min). Muestra 
 | Archivo | Qué es |
 |---|---|
 | `index.html` | La aplicación completa: estilos, código, tabla de tiempos y los meses incluidos. |
-| `planning.json` | (Opcional) Planning compartido de los meses importados, generado desde la propia página. |
+| `planning.json` | (Opcional, normalmente no hace falta) Copia del planning para publicarlo en GitHub si no hay carpeta compartida. |
 | `README.md` | Este documento. |
 
+En la **carpeta compartida** del hospital (no en GitHub) la página guarda `planning.json`, `preferencias.json`, `de_dia_AAAA-MM-DD.json`, `reparto_AAAA-MM-DD.json` y `campanas_AAAA-MM-DD.json`. Los archivos de días de más de 14 días se borran solos. **Esto no borra piezas atrasadas:** cada día, lo pendiente se copia al reparto del día nuevo con sus días de espera, historial, ficha, notas y descalcificación, así que una pieza atrasada siempre está en el archivo del día actual. Lo pendiente se trae del último día con reparto (hasta 14 días atrás), aunque algún día laborable nadie haya abierto el reparto, y se suman los días laborables que hayan pasado.
+
 ## Notas
-- Lo que cada uno cambia (planning editado a mano, piezas del día, reparto calculado) se guarda en el `localStorage` de su navegador.
+- Con la carpeta compartida conectada, el planning, las previstas de DÍA y el reparto de cada día se comparten entre todos. Sin carpeta, solo se guardan en el navegador de cada uno.
 - Para leer el planning en PDF, la página carga pdf.js desde cdnjs, así que hace falta conexión a internet. El Excel se lee sin conexión.
 - Si el repositorio es público, el HTML y el planning.json (con los nombres de los residentes) son visibles para cualquiera. Los datos de pacientes nunca van en estos archivos.
